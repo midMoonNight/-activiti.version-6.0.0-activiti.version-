@@ -1,10 +1,10 @@
-Ext.define('Admin.view.process.definition.ProcessDefinitionUploadWindow', {
+﻿Ext.define('Admin.view.process.definition.ProcessDefinitionUploadWindow', {
     extend: 'Ext.window.Window',
     alias: 'widget.processDefinitionUploadWindow',
     requires: [
         'Ext.button.Button',
         'Ext.form.field.Text',
-        'Ext.form.field.File',//引入上传控件
+        'Ext.form.field.File',
         'Ext.form.field.HtmlEditor'
     ],
     height: 180,
@@ -26,12 +26,12 @@ Ext.define('Admin.view.process.definition.ProcessDefinitionUploadWindow', {
         	xtype: 'filefield',
 	        width: 400,
 	        labelWidth: 80,
-	        name:'file',//提交给后台的字段名
+	        name:'file',
 	        emptyText: 'Select an zip/bpmn/bpmn.20.xml file!', 
 	        fieldLabel: '上传文件:',
 	        labelSeparator: '',
 	        buttonConfig: {
-	            xtype: 'filebutton',//选择上传文件按钮
+	            xtype: 'filebutton',
 	            glyph:'',
 	            iconCls: 'x-fa fa-cloud-upload',
 	            text: 'Browse'

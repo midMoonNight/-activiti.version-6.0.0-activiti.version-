@@ -2293,6 +2293,25 @@ the height of a multi-line element */
 .x-datepicker-month .x-btn-split > .x-btn-button:after {
     content: none;
 }
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Display.scss:1 */
+.x-form-display-field-body {
+    vertical-align: top;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Display.scss:3 */
+.x-form-display-field-body .x-form-display-field {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    -ms-word-break: break-all;
+    /* This is dangerous in WebKit as it breaks things at random points */
+    word-break: break-all;
+    /* Use this non-standard instead */
+    word-break: break-word;
+    /* Adds a hyphen where the word breaks, if supported (No Blink) */
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/trigger/Component.scss:3 */
 .x-form-trigger.x-form-trigger-cmp:before {
     content: none;
@@ -2325,6 +2344,10 @@ the height of a multi-line element */
       * the native button part very large so it will cover the whole clickable area.
       */
     font-size: 1000px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Hidden.scss:1 */
+.x-form-item-hidden {
+    margin: 0;
 }
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/tip/Tip.scss:1 */
 .x-tip {
@@ -2365,6 +2388,65 @@ the height of a multi-line element */
     width: 100%;
     height: 100%;
     border: 0;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:1 */
+.x-tagfield-body {
+    vertical-align: top;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:5 */
+.x-tagfield {
+    height: auto!important;
+    /* The wrap has to accommodate the list, so override the .x-form-text height rule */
+    cursor: text;
+    overflow-y: auto;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:11 */
+.x-tagfield .x-tagfield-list {
+    padding: 0;
+    margin: 0;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:16 */
+.x-tagfield-list.x-tagfield-singleselect {
+    white-space: nowrap;
+    overflow: hidden;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:21 */
+.x-tagfield-input,
+.x-tagfield-item {
+    vertical-align: top;
+    display: inline-block;
+    position: relative;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:27 */
+.x-tagfield-input-field {
+    font: inherit;
+    border: 0;
+    margin: 0;
+    background: none;
+    width: 100%;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:35 */
+.x-tagfield-stacked .x-tagfield-item {
+    display: block;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:39 */
+.x-tagfield-item {
+    cursor: default;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:43 */
+.x-tagfield-item-close {
+    cursor: pointer;
+    position: absolute;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:48 */
+.x-tagfield-arialist {
+    list-style-type: none;
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/form/field/Tag.scss:54 */
+.x-tagfield-arialist-item {
+    list-style-type: none;
 }
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/src/layout/container/Fit.scss:1 */
 .x-fit-item {
@@ -10024,6 +10106,16 @@ body > .x-mask {
 .x-form-cb-label-default.x-form-cb-label-after {
     padding-left: 22px;
 }
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/CheckboxGroup.scss:96 */
+.x-form-item-body-default.x-form-checkboxgroup-body {
+    padding: 0 4px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/CheckboxGroup.scss:99 */
+.x-form-invalid .x-form-item-body-default.x-form-checkboxgroup-body {
+    border-width: 1px;
+    border-style: solid;
+    border-color: #cf4c35;
+}
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/trigger/Spinner.scss:71 */
 .x-form-trigger-spinner-default {
     width: 32px;
@@ -10480,6 +10572,41 @@ a.x-monthpicker-yearnav-button:hover {
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/etc/mixins/font-icon.scss:132 */
 .x-form-field-date .x-form-date-trigger:before {
     content: "\f073";
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Display.scss:52 */
+.x-form-display-field-default {
+    min-height: 32px;
+    font: 400 13px/17px 'Open Sans', 'Helvetica Neue', helvetica, arial, verdana, sans-serif;
+    color: #404040;
+    margin-top: 8px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Display.scss:60 */
+.x-keyboard-mode .x-form-display-field-default.x-field-form-focus {
+    outline: 1px solid #53c4f7;
+    outline-offset: -1px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/etc/mixins/css-outline.scss:63 */
+.x-ie .x-keyboard-mode .x-form-display-field-default.x-field-form-focus,
+.x-ie10p .x-keyboard-mode .x-form-display-field-default.x-field-form-focus,
+.x-edge .x-keyboard-mode .x-form-display-field-default.x-field-form-focus {
+    outline: none;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/etc/mixins/css-outline.scss:39 */
+.x-ie .x-keyboard-mode .x-form-display-field-default.x-field-form-focus:after,
+.x-ie10p .x-keyboard-mode .x-form-display-field-default.x-field-form-focus:after,
+.x-edge .x-keyboard-mode .x-form-display-field-default.x-field-form-focus:after {
+    position: absolute;
+    content: ' ';
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    border: 1px solid #53c4f7;
+    pointer-events: none;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Display.scss:71 */
+.x-ie8 .x-form-display-field-default.x-field-form-focus {
+    position: relative;
 }
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-base/sass/etc/mixins/frame.scss:187 */
 .x-tip-default {
@@ -11056,6 +11183,79 @@ a.x-color-picker-item:hover {
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/src/form/field/HtmlEditor.scss:177 */
 .x-htmleditor-iframe {
     background-color: #fff;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:320 */
+.x-form-text-default.x-tagfield {
+    padding: 3px 0 0 4px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:324 */
+.x-form-text-default .x-tagfield-input {
+    margin: 0 4px 3px 0;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:328 */
+.x-form-text-default .x-tagfield-input-field {
+    height: 24px;
+    line-height: 24px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:333 */
+.x-form-text-default .x-tagfield-item {
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    -ms-border-radius: 0;
+    -o-border-radius: 0;
+    border-radius: 0;
+    background-color: #ececec;
+    border: 1px solid #ececec;
+    padding: 0 21px 0 5px;
+    margin: 0 4px 3px 0;
+    color: #404040;
+    line-height: 22px;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:344 */
+.x-form-text-default .x-tagfield-item:hover {
+    background-color: #e5e5e5;
+    border-color: #e5e5e5;
+    color: #404040;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:352 */
+.x-form-text-default .x-tagfield-item.x-tagfield-item-selected {
+    background-color: #5dc8f8;
+    border-color: #5dc8f8;
+    color: #fff;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:367 */
+.x-form-text-default .x-tagfield-item-close {
+    width: 12px;
+    height: 12px;
+    top: 5px;
+    right: 3px;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=85)";
+    opacity: 0.85;
+    font: 12px/1 FontAwesome;
+    color: #919191;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/etc/mixins/font-icon.scss:132 */
+.x-form-text-default .x-tagfield-item-close:before {
+    content: "\f00d";
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:384 */
+.x-form-text-default .x-tagfield-item-close:hover {
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=93)";
+    opacity: 0.93;
+    color: #919191;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:395 */
+.x-form-text-default .x-tagfield-item-close:active {
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    opacity: 1;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:412 */
+.x-form-text-default .x-tagfield-item-selected .x-tagfield-item-close {
+    color: #fff;
+}
+/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/var/form/field/Tag.scss:416 */
+.x-form-text-default .x-tagfield-item-selected .x-tagfield-item-close:hover {
+    color: #fff;
 }
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neutral/sass/src/view/Table.scss:5 */
 .x-grid-view,
@@ -15487,170 +15687,4 @@ a.x-color-picker-item:hover {
 /* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/grid/column/Column.scss:20 */
 .x-column-header-last .x-column-header-over .x-column-header-trigger {
     border-right: 1px solid #d0d0d0;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:1 */
-.x-resizable-handle {
-    background-repeat: no-repeat;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:6 */
-.x-resizable-handle-east-over,
-.x-resizable-handle-west-over {
-    background-position: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:11 */
-.x-resizable-handle-south-over,
-.x-resizable-handle-north-over {
-    background-position: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:16 */
-.x-resizable-handle-southeast-over {
-    background-position: -2px -2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:20 */
-.x-resizable-handle-northwest-over {
-    background-position: 2px 2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:24 */
-.x-resizable-handle-northeast-over {
-    background-position: -2px 2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:28 */
-.x-resizable-handle-southwest-over {
-    background-position: 2px -2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:33 */
-.x-resizable-pinned .x-resizable-handle-east,
-.x-resizable-pinned .x-resizable-handle-west {
-    background-position: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:38 */
-.x-resizable-pinned .x-resizable-handle-south,
-.x-resizable-pinned .x-resizable-handle-north {
-    background-position: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:43 */
-.x-resizable-pinned .x-resizable-handle-southeast {
-    background-position: -2px -2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:47 */
-.x-resizable-pinned .x-resizable-handle-northwest {
-    background-position: 2px 2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:51 */
-.x-resizable-pinned .x-resizable-handle-northeast {
-    background-position: -2px 2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/classic/theme-neptune/sass/src/resizer/Resizer.scss:55 */
-.x-resizable-pinned .x-resizable-handle-southwest {
-    background-position: 2px -2px;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_path.scss:5 */
-@font-face {
-    /* FONT PATH
- * -------------------------- */
-    /* FONT PATH
- * -------------------------- */
-    font-family: 'FontAwesome';
-    src: url('../../resources/font-awesome/fonts/fontawesome-webfont.eot?v=4.7.0');
-    src: url('../../resources/font-awesome/fonts/fontawesome-webfont.eot?#iefix&v=4.7.0') format('embedded-opentype'), url('../../resources/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'), url('../../resources/font-awesome/fonts/fontawesome-webfont.woff?v=4.7.0') format('woff'), url('../../resources/font-awesome/fonts/fontawesome-webfont.ttf?v=4.7.0') format('truetype'), url('../../resources/font-awesome/fonts/fontawesome-webfont.svg?v=4.7.0#fontawesomeregular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_core.scss:4 */
-.fa {
-    display: inline-block;
-    font: normal normal normal 14px/1 FontAwesome;
-    font-size: inherit;
-    text-rendering: auto;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_larger.scss:5 */
-.fa-lg {
-    /* makes the font 33% larger relative to the icon container */
-    font-size: 1.33333em;
-    line-height: 0.75em;
-    vertical-align: -15%;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_larger.scss:10 */
-.fa-2x {
-    font-size: 2em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_larger.scss:11 */
-.fa-3x {
-    font-size: 3em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_larger.scss:12 */
-.fa-4x {
-    font-size: 4em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_larger.scss:13 */
-.fa-5x {
-    font-size: 5em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_fixed-width.scss:3 */
-.fa-fw {
-    width: 1.28571em;
-    text-align: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_list.scss:4 */
-.fa-ul {
-    padding-left: 0;
-    margin-left: 2.14286em;
-    list-style-type: none;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_list.scss:8 */
-.fa-ul > li {
-    position: relative;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_list.scss:10 */
-.fa-li {
-    position: absolute;
-    left: -2.14286em;
-    width: 2.14286em;
-    top: 0.14286em;
-    text-align: center;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_list.scss:16 */
-.fa-li.fa-lg {
-    left: -1.85714em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:4 */
-.fa-border {
-    padding: 0.2em 0.25em 0.15em;
-    border: solid 0.08em #eee;
-    border-radius: 0.1em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:10 */
-.fa-pull-left {
-    float: left;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:11 */
-.fa-pull-right {
-    float: right;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:14 */
-.fa.fa-pull-left {
-    margin-right: 0.3em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:15 */
-.fa.fa-pull-right {
-    margin-left: 0.3em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:19 */
-.pull-right {
-    /* Deprecated as of 4.4.0 */
-    float: right;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:20 */
-.pull-left {
-    float: left;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:23 */
-.fa.pull-left {
-    margin-right: 0.3em;
-}
-/* C:/Users/Administrator/git/activiti-springboot-test-1/activiti-springboot-test-1/admin-dashboard/ext/packages/font-awesome/sass/etc/_bordered-pulled.scss:24 */
-.fa.pull-right {
-    margin-left: 0.3em;
 }

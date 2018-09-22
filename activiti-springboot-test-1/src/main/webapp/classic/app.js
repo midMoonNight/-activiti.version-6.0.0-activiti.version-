@@ -64499,6 +64499,270 @@ Ext.define('Ext.form.FieldContainer', {extend:Ext.container.Container, mixins:{l
   }
   return me.callParent();
 }}});
+Ext.define('Ext.layout.container.CheckboxGroup', {extend:Ext.layout.container.Container, alias:['layout.checkboxgroup'], autoFlex:true, type:'checkboxgroup', createsInnerCt:true, childEls:['innerCt'], renderTpl:'\x3ctable id\x3d"{ownerId}-innerCt" data-ref\x3d"innerCt" class\x3d"' + Ext.baseCSSPrefix + 'table-plain" cellpadding\x3d"0"' + 'role\x3d"presentation" style\x3d"{tableStyle}"\x3e' + '\x3ctbody role\x3d"presentation"\x3e' + '\x3ctr role\x3d"presentation"\x3e' + '\x3ctpl for\x3d"columns"\x3e' + 
+'\x3ctd class\x3d"{parent.colCls}" valign\x3d"top" style\x3d"{style}" role\x3d"presentation"\x3e' + '{% this.renderColumn(out,parent,xindex-1) %}' + '\x3c/td\x3e' + '\x3c/tpl\x3e' + '\x3c/tr\x3e' + '\x3c/tbody\x3e' + '\x3c/table\x3e', lastOwnerItemsGeneration:null, initLayout:function() {
+  var me = this, owner = me.owner;
+  me.columnsArray = Ext.isArray(owner.columns);
+  me.autoColumns = !owner.columns || owner.columns === 'auto';
+  if (!me.autoColumns) {
+    me.vertical = owner.vertical || (owner.columns === 1 || owner.columns.length === 1);
+  }
+  me.callParent();
+}, beginLayout:function(ownerContext) {
+  var me = this, columns, numCols, i, width, cwidth, totalFlex = 0, flexedCols = 0, autoFlex = me.autoFlex, innerCtStyle = me.innerCt.dom.style;
+  me.callParent(arguments);
+  columns = me.rowNodes[0].children;
+  ownerContext.innerCtContext = ownerContext.getEl('innerCt', me);
+  if (!ownerContext.widthModel.shrinkWrap) {
+    numCols = columns.length;
+    if (me.columnsArray) {
+      for (i = 0; i < numCols; i++) {
+        width = me.owner.columns[i];
+        if (width < 1) {
+          totalFlex += width;
+          flexedCols++;
+        }
+      }
+      for (i = 0; i < numCols; i++) {
+        width = me.owner.columns[i];
+        if (width < 1) {
+          cwidth = width / totalFlex * 100 + '%';
+        } else {
+          cwidth = width + 'px';
+        }
+        columns[i].style.width = cwidth;
+      }
+    } else {
+      for (i = 0; i < numCols; i++) {
+        cwidth = autoFlex ? 1 / numCols * 100 + '%' : '';
+        columns[i].style.width = cwidth;
+        flexedCols++;
+      }
+    }
+    if (!flexedCols) {
+      innerCtStyle.tableLayout = 'fixed';
+      innerCtStyle.width = '';
+    } else {
+      if (flexedCols < numCols) {
+        innerCtStyle.tableLayout = 'fixed';
+        innerCtStyle.width = '100%';
+      } else {
+        innerCtStyle.tableLayout = 'auto';
+        if (autoFlex) {
+          innerCtStyle.width = '100%';
+        } else {
+          innerCtStyle.width = '';
+        }
+      }
+    }
+  } else {
+    innerCtStyle.tableLayout = 'auto';
+    innerCtStyle.width = '';
+  }
+}, cacheElements:function() {
+  var me = this;
+  me.callParent();
+  me.rowNodes = me.innerCt.query('tr', true);
+  me.tBodyNode = me.rowNodes[0].parentNode;
+}, calculate:function(ownerContext) {
+  var me = this, targetContext, widthShrinkWrap, heightShrinkWrap, shrinkWrap, table, targetPadding;
+  if (!ownerContext.getDomProp('containerChildrenSizeDone')) {
+    me.done = false;
+  } else {
+    targetContext = ownerContext.innerCtContext;
+    widthShrinkWrap = ownerContext.widthModel.shrinkWrap;
+    heightShrinkWrap = ownerContext.heightModel.shrinkWrap;
+    shrinkWrap = heightShrinkWrap || widthShrinkWrap;
+    table = targetContext.el.dom;
+    targetPadding = shrinkWrap && targetContext.getPaddingInfo();
+    if (widthShrinkWrap) {
+      ownerContext.setContentWidth(table.offsetWidth + targetPadding.width, true);
+    }
+    if (heightShrinkWrap) {
+      ownerContext.setContentHeight(table.offsetHeight + targetPadding.height, true);
+    }
+  }
+}, doRenderColumn:function(out, renderData, columnIndex) {
+  var me = renderData.$layout, owner = me.owner, columnCount = renderData.columnCount, items = owner.items.items, itemCount = items.length, item, itemIndex, rowCount, increment, tree;
+  if (owner.vertical) {
+    rowCount = Math.ceil(itemCount / columnCount);
+    itemIndex = columnIndex * rowCount;
+    itemCount = Math.min(itemCount, itemIndex + rowCount);
+    increment = 1;
+  } else {
+    itemIndex = columnIndex;
+    increment = columnCount;
+  }
+  for (; itemIndex < itemCount; itemIndex += increment) {
+    item = items[itemIndex];
+    me.configureItem(item);
+    tree = item.getRenderTree();
+    Ext.DomHelper.generateMarkup(tree, out);
+  }
+}, getColumnCount:function() {
+  var me = this, owner = me.owner, ownerColumns = owner.columns;
+  if (me.columnsArray) {
+    return ownerColumns.length;
+  }
+  if (Ext.isNumber(ownerColumns)) {
+    return ownerColumns;
+  }
+  return owner.items.length;
+}, getItemSizePolicy:function(item) {
+  return this.autoSizePolicy;
+}, getRenderData:function() {
+  var me = this, data = me.callParent(), owner = me.owner, i, columns = me.getColumnCount(), width, column, cwidth, autoFlex = me.autoFlex, totalFlex = 0, flexedCols = 0;
+  if (me.columnsArray) {
+    for (i = 0; i < columns; i++) {
+      width = me.owner.columns[i];
+      if (width < 1) {
+        totalFlex += width;
+        flexedCols++;
+      }
+    }
+  }
+  data.colCls = owner.groupCls;
+  data.columnCount = columns;
+  data.columns = [];
+  for (i = 0; i < columns; i++) {
+    column = data.columns[i] = {};
+    if (me.columnsArray) {
+      width = me.owner.columns[i];
+      if (width < 1) {
+        cwidth = width / totalFlex * 100 + '%';
+      } else {
+        cwidth = width + 'px';
+      }
+      column.style = 'width:' + cwidth;
+    } else {
+      column.style = 'width:' + 1 / columns * 100 + '%';
+      flexedCols++;
+    }
+  }
+  data.tableStyle = !flexedCols ? 'table-layout:fixed;' : flexedCols < columns ? 'table-layout:fixed;width:100%' : autoFlex ? 'table-layout:auto;width:100%' : 'table-layout:auto;';
+  return data;
+}, isValidParent:Ext.returnTrue, setupRenderTpl:function(renderTpl) {
+  this.callParent(arguments);
+  renderTpl.renderColumn = this.doRenderColumn;
+}, renderChildren:function() {
+  var me = this, generation = me.owner.items.generation;
+  if (me.lastOwnerItemsGeneration !== generation) {
+    me.lastOwnerItemsGeneration = generation;
+    me.renderItems(me.getLayoutItems());
+  }
+}, renderItems:function(items) {
+  var me = this, itemCount = items.length, item, rowCount, columnCount, rowIndex, columnIndex, i;
+  if (itemCount) {
+    Ext.suspendLayouts();
+    if (me.autoColumns) {
+      columnCount = itemCount;
+      rowCount = 1;
+    } else {
+      columnCount = me.columnsArray ? me.owner.columns.length : me.owner.columns;
+      rowCount = Math.ceil(itemCount / columnCount);
+    }
+    for (i = 0; i < itemCount; i++) {
+      item = items[i];
+      rowIndex = me.getRenderRowIndex(i, rowCount, columnCount);
+      columnIndex = me.getRenderColumnIndex(i, rowCount, columnCount);
+      if (!item.rendered) {
+        me.renderItem(item, rowIndex, columnIndex);
+      } else {
+        if (!me.isItemAtPosition(item, rowIndex, columnIndex)) {
+          me.moveItem(item, rowIndex, columnIndex);
+        }
+      }
+    }
+    me.pruneRows(rowCount, columnCount);
+    Ext.resumeLayouts(true);
+  }
+}, isItemAtPosition:function(item, rowIndex, columnIndex) {
+  return item.el.dom === this.getItemNodeAt(rowIndex, columnIndex);
+}, getRenderColumnIndex:function(itemIndex, rowCount, columnCount) {
+  if (this.vertical) {
+    return Math.floor(itemIndex / rowCount);
+  } else {
+    return itemIndex % columnCount;
+  }
+}, getRenderRowIndex:function(itemIndex, rowCount, columnCount) {
+  if (this.vertical) {
+    return itemIndex % rowCount;
+  } else {
+    return Math.floor(itemIndex / columnCount);
+  }
+}, getItemNodeAt:function(rowIndex, columnIndex) {
+  var column = this.getColumnNodeAt(rowIndex, columnIndex);
+  return this.vertical ? column.children[rowIndex] : column.children[0];
+}, getRowNodeAt:function(rowIndex) {
+  var me = this, row;
+  rowIndex = me.vertical ? 0 : rowIndex;
+  row = me.rowNodes[rowIndex];
+  if (!row) {
+    row = me.rowNodes[rowIndex] = document.createElement('tr');
+    row.role = 'presentation';
+    me.tBodyNode.appendChild(row);
+  }
+  return row;
+}, getColumnNodeAt:function(rowIndex, columnIndex, row) {
+  var column;
+  row = row || this.getRowNodeAt(rowIndex);
+  column = row.children[columnIndex];
+  if (!column) {
+    column = Ext.fly(row).appendChild({tag:'td', cls:this.owner.groupCls, vAlign:'top', role:'presentation'}, true);
+  }
+  return column;
+}, pruneRows:function(rowCount, columnCount) {
+  var me = this, rows = me.tBodyNode.children, columns, row, column, i, j;
+  rowCount = me.vertical ? 1 : rowCount;
+  while (rows.length > rowCount) {
+    row = rows[rows.length - 1];
+    while (row.children.length) {
+      Ext.get(row.children[0]).destroy();
+    }
+    row.parentNode.removeChild(row);
+  }
+  for (i = rowCount - 1; i >= 0; i--) {
+    row = rows[i];
+    columns = row.children;
+    while (columns.length > columnCount) {
+      column = columns[columns.length - 1];
+      Ext.get(column).destroy();
+    }
+    if (i > 0) {
+      for (j = columns.length - 1; j >= 0; j--) {
+        column = columns[j];
+        if (column.children.length === 0) {
+          Ext.get(column).destroy();
+        } else {
+          break;
+        }
+      }
+    }
+  }
+}, renderItem:function(item, rowIndex, columnIndex) {
+  var me = this, column, itemIndex;
+  me.configureItem(item);
+  itemIndex = me.vertical ? rowIndex : 0;
+  column = Ext.get(me.getColumnNodeAt(rowIndex, columnIndex));
+  item.render(column, itemIndex);
+}, moveItem:function(item, rowIndex, columnIndex) {
+  var me = this, column, itemIndex, targetNode;
+  itemIndex = me.vertical ? rowIndex : 0;
+  column = me.getColumnNodeAt(rowIndex, columnIndex);
+  targetNode = column.children[itemIndex];
+  column.insertBefore(item.el.dom, targetNode || null);
+}, destroy:function() {
+  if (this.owner.rendered) {
+    var target = this.getRenderTarget(), cells, i, len;
+    if (target) {
+      cells = target.query('.' + this.owner.groupCls, false);
+      for (i = 0, len = cells.length; i < len; i++) {
+        cells[i].destroy();
+      }
+    }
+  }
+  this.callParent();
+}});
 Ext.define('Ext.form.CheckboxManager', {extend:Ext.util.MixedCollection, singleton:true, getByName:function(name, formId) {
   return this.filterBy(function(item) {
     return item.name === name && item.getFormId() === formId;
@@ -64705,6 +64969,173 @@ Ext.define('Ext.theme.triton.form.field.Checkbox', {override:'Ext.form.field.Che
     this.getFocusClsEl().syncRepaint();
   }
 }});
+Ext.define('Ext.form.CheckboxGroup', {extend:Ext.form.FieldContainer, xtype:'checkboxgroup', isCheckboxGroup:true, mixins:{field:Ext.form.field.Field}, columns:'auto', vertical:false, allowBlank:true, blankText:'You must select at least one item in this group', defaultType:'checkboxfield', defaultBindProperty:'value', groupCls:Ext.baseCSSPrefix + 'form-check-group', extraFieldBodyCls:Ext.baseCSSPrefix + 'form-checkboxgroup-body', layout:'checkboxgroup', componentCls:Ext.baseCSSPrefix + 'form-checkboxgroup', 
+ariaRole:'group', ariaEl:'containerEl', skipLabelForAttribute:true, ariaRenderAttributes:{'aria-invalid':false}, initComponent:function() {
+  var me = this;
+  me.name = me.name || me.id;
+  me.callParent();
+  me.initField();
+}, initRenderData:function() {
+  var me = this, data, ariaAttr, boxes, i, len, ids;
+  data = me.callParent();
+  data.inputId = me.id + '-' + me.ariaEl;
+  ariaAttr = data.ariaAttributes;
+  if (ariaAttr) {
+    if (!ariaAttr['aria-labelledby']) {
+      ariaAttr['aria-labelledby'] = me.id + '-labelTextEl';
+    }
+  }
+  return data;
+}, initValue:function() {
+  var me = this, valueCfg = me.value;
+  me.originalValue = me.lastValue = valueCfg || me.getValue();
+  if (valueCfg) {
+    me.setValue(valueCfg);
+  }
+}, onAdd:function(field) {
+  var me = this, items, len, i;
+  if (field.isCheckbox) {
+    if (field.name == null) {
+      field.name = me.name;
+    }
+    me.mon(field, 'change', me.checkChange, me);
+  } else {
+    if (field.isContainer) {
+      items = field.items.items;
+      for (i = 0, len = items.length; i < len; i++) {
+        me.onAdd(items[i]);
+      }
+    }
+  }
+  me.callParent(arguments);
+}, onRemove:function(item) {
+  var me = this, items, len, i;
+  if (item.isCheckbox) {
+    me.mun(item, 'change', me.checkChange, me);
+  } else {
+    if (item.isContainer) {
+      items = item.items.items;
+      for (i = 0, len = items.length; i < len; i++) {
+        me.onRemove(items[i]);
+      }
+    }
+  }
+  me.callParent(arguments);
+}, isEqual:function(value1, value2) {
+  var toQueryString = Ext.Object.toQueryString;
+  return toQueryString(value1) === toQueryString(value2);
+}, getErrors:function() {
+  var errors = [];
+  if (!this.allowBlank && Ext.isEmpty(this.getChecked())) {
+    errors.push(this.blankText);
+  }
+  return errors;
+}, getBoxes:function(query) {
+  return this.query('[isCheckbox]' + (query || ''));
+}, eachBox:function(fn, scope) {
+  Ext.Array.forEach(this.getBoxes(), fn, scope || this);
+}, getChecked:function() {
+  return this.getBoxes('[checked]');
+}, isDirty:function() {
+  var boxes = this.getBoxes(), b, bLen = boxes.length;
+  for (b = 0; b < bLen; b++) {
+    if (boxes[b].isDirty()) {
+      return true;
+    }
+  }
+}, setReadOnly:function(readOnly) {
+  var boxes = this.getBoxes(), b, bLen = boxes.length;
+  for (b = 0; b < bLen; b++) {
+    boxes[b].setReadOnly(readOnly);
+  }
+  this.readOnly = readOnly;
+}, reset:function() {
+  var me = this, hadError = me.hasActiveError(), preventMark = me.preventMark;
+  me.preventMark = true;
+  me.batchChanges(function() {
+    var boxes = me.getBoxes(), b, bLen = boxes.length;
+    for (b = 0; b < bLen; b++) {
+      boxes[b].reset();
+    }
+  });
+  me.preventMark = preventMark;
+  me.unsetActiveError();
+  if (hadError) {
+    me.updateLayout();
+  }
+}, resetOriginalValue:function() {
+  var me = this, boxes = me.getBoxes(), b, bLen = boxes.length;
+  for (b = 0; b < bLen; b++) {
+    boxes[b].resetOriginalValue();
+  }
+  me.originalValue = me.getValue();
+  me.checkDirty();
+}, setValue:function(value) {
+  var me = this, boxes = me.getBoxes(), b, bLen = boxes.length, box, name, cbValue;
+  me.batchChanges(function() {
+    Ext.suspendLayouts();
+    for (b = 0; b < bLen; b++) {
+      box = boxes[b];
+      name = box.getName();
+      cbValue = false;
+      if (value) {
+        if (Ext.isArray(value[name])) {
+          cbValue = Ext.Array.contains(value[name], box.inputValue);
+        } else {
+          cbValue = value[name];
+        }
+      }
+      box.setValue(cbValue);
+    }
+    Ext.resumeLayouts(true);
+  });
+  return me;
+}, getValue:function() {
+  var values = {}, boxes = this.getBoxes(), b, bLen = boxes.length, box, name, inputValue, bucket;
+  for (b = 0; b < bLen; b++) {
+    box = boxes[b];
+    name = box.getName();
+    inputValue = box.inputValue;
+    if (box.getValue()) {
+      if (values.hasOwnProperty(name)) {
+        bucket = values[name];
+        if (!Ext.isArray(bucket)) {
+          bucket = values[name] = [bucket];
+        }
+        bucket.push(inputValue);
+      } else {
+        values[name] = inputValue;
+      }
+    }
+  }
+  return values;
+}, getSubmitData:function() {
+  return null;
+}, getModelData:function() {
+  return null;
+}, validate:function() {
+  var me = this, errors, isValid, wasValid;
+  if (me.disabled) {
+    isValid = true;
+  } else {
+    errors = me.getErrors();
+    isValid = Ext.isEmpty(errors);
+    wasValid = me.wasValid;
+    if (isValid) {
+      me.unsetActiveError();
+    } else {
+      me.setActiveError(errors);
+    }
+  }
+  if (isValid !== wasValid) {
+    me.wasValid = isValid;
+    me.fireEvent('validitychange', me, isValid);
+    me.updateLayout();
+  }
+  return isValid;
+}}, function() {
+  this.borrow(Ext.form.field.Base, ['markInvalid', 'clearInvalid', 'setError']);
+});
 Ext.define('Ext.form.Label', {extend:Ext.Component, alias:'widget.label', autoEl:'label', maskOnDisable:false, getElConfig:function() {
   var me = this;
   me.html = me.text ? Ext.util.Format.htmlEncode(me.text) : me.html || '';
@@ -64791,6 +65222,167 @@ Ext.define('Ext.form.Panel', {extend:Ext.panel.Panel, mixins:{fieldAncestor:Ext.
     fields[f].checkChange();
   }
 }});
+Ext.define('Ext.form.RadioManager', {extend:Ext.util.MixedCollection, singleton:true, getByName:function(name, formId) {
+  return this.filterBy(function(item) {
+    return item.name === name && item.getFormId() === formId;
+  });
+}, getWithValue:function(name, value, formId) {
+  return this.filterBy(function(item) {
+    return item.name === name && item.inputValue == value && item.getFormId() === formId;
+  });
+}, getChecked:function(name, formId) {
+  return this.findBy(function(item) {
+    return item.name === name && item.checked && item.getFormId() === formId;
+  });
+}});
+Ext.define('Ext.form.field.Radio', {extend:Ext.form.field.Checkbox, alias:['widget.radiofield', 'widget.radio'], alternateClassName:'Ext.form.Radio', isRadio:true, inputType:'radio', formId:null, modelValue:undefined, modelValueUnchecked:null, initComponent:function() {
+  var me = this;
+  if (me.modelValue === undefined) {
+    me.modelValue = me.inputValue;
+  }
+  me.callParent();
+}, getGroupValue:function() {
+  var selected = this.getManager().getChecked(this.name, this.getFormId());
+  return selected ? selected.inputValue : null;
+}, onRemoved:function() {
+  this.callParent(arguments);
+  this.formId = null;
+}, setValue:function(value) {
+  var me = this, active;
+  if (Ext.isBoolean(value)) {
+    me.callParent(arguments);
+  } else {
+    active = me.getManager().getWithValue(me.name, value, me.getFormId()).getAt(0);
+    if (active) {
+      active.setValue(true);
+    }
+  }
+  return me;
+}, getSubmitValue:function() {
+  return this.checked ? this.inputValue : null;
+}, onChange:function(newVal, oldVal) {
+  var me = this, ownerCt = me.ownerCt, r, rLen, radio, radios;
+  me.callParent(arguments);
+  if (!me.$groupChange) {
+    if (newVal) {
+      radios = me.getManager().getByName(me.name, me.getFormId()).items;
+      rLen = radios.length;
+      for (r = 0; r < rLen; r++) {
+        radio = radios[r];
+        if (radio !== me) {
+          radio.updateValueFromDom();
+        }
+      }
+    }
+    if (ownerCt && ownerCt.isRadioGroup && ownerCt.simpleValue) {
+      ownerCt.checkChange();
+    }
+  }
+}, getManager:function() {
+  return Ext.form.RadioManager;
+}});
+Ext.define('Ext.form.RadioGroup', {extend:Ext.form.CheckboxGroup, xtype:'radiogroup', isRadioGroup:true, allowBlank:true, blankText:'You must select one item in this group', defaultType:'radiofield', local:false, simpleValue:false, defaultBindProperty:'value', groupCls:Ext.baseCSSPrefix + 'form-radio-group', ariaRole:'radiogroup', initRenderData:function() {
+  var me = this, data, ariaAttr;
+  data = me.callParent();
+  ariaAttr = data.ariaAttributes;
+  if (ariaAttr) {
+    ariaAttr['aria-required'] = !me.allowBlank;
+    ariaAttr['aria-invalid'] = false;
+  }
+  return data;
+}, lookupComponent:function(config) {
+  var result = this.callParent([config]);
+  if (this.local) {
+    result.formId = this.getId();
+  }
+  return result;
+}, getBoxes:function(query, root) {
+  return (root || this).query('[isRadio]' + (query || ''));
+}, checkChange:function() {
+  var me = this, value, key;
+  value = me.getValue();
+  key = typeof value === 'object' && Ext.Object.getKeys(value)[0];
+  if (me.simpleValue || key && !Ext.isArray(value[key])) {
+    me.callParent(arguments);
+  }
+}, isEqual:function(value1, value2) {
+  if (this.simpleValue) {
+    return value1 === value2;
+  }
+  return this.callParent([value1, value2]);
+}, getValue:function() {
+  var me = this, items = me.items.items, i, item, ret;
+  if (me.simpleValue) {
+    for (i = items.length; i-- > 0;) {
+      item = items[i];
+      if (item.checked) {
+        ret = item.inputValue;
+        break;
+      }
+    }
+  } else {
+    ret = me.callParent();
+  }
+  return ret;
+}, setValue:function(value) {
+  var items = this.items, cbValue, cmp, formId, radios, i, len, name;
+  Ext.suspendLayouts();
+  if (this.simpleValue) {
+    for (i = 0, len = items.length; i < len; ++i) {
+      cmp = items.items[i];
+      cmp.$groupChange = true;
+      cmp.setValue(cmp.inputValue === value);
+      delete cmp.$groupChange;
+    }
+  } else {
+    if (Ext.isObject(value)) {
+      cmp = items.first();
+      formId = cmp ? cmp.getFormId() : null;
+      for (name in value) {
+        cbValue = value[name];
+        radios = Ext.form.RadioManager.getWithValue(name, cbValue, formId).items;
+        len = radios.length;
+        for (i = 0; i < len; ++i) {
+          radios[i].setValue(true);
+        }
+      }
+    }
+  }
+  Ext.resumeLayouts(true);
+  return this;
+}, markInvalid:function(errors) {
+  var ariaDom = this.ariaEl.dom;
+  this.callParent([errors]);
+  if (ariaDom) {
+    ariaDom.setAttribute('aria-invalid', true);
+  }
+}, clearInvalid:function() {
+  var ariaDom = this.ariaEl.dom;
+  this.callParent();
+  if (ariaDom) {
+    ariaDom.setAttribute('aria-invalid', false);
+  }
+}}, function() {
+  if (Ext.isGecko) {
+    this.override({onFocusEnter:function(e) {
+      var target = e.toComponent, radios, i, len;
+      if (target.isRadio) {
+        radios = target.getManager().getByName(target.name, target.getFormId()).items;
+        for (i = 0, len = radios.length; i < len; i++) {
+          radios[i].disableTabbing();
+        }
+      }
+    }, onFocusLeave:function(e) {
+      var target = e.fromComponent, radios, i, len;
+      if (target.isRadio) {
+        radios = target.getManager().getByName(target.name, target.getFormId()).items;
+        for (i = 0, len = radios.length; i < len; i++) {
+          radios[i].enableTabbing();
+        }
+      }
+    }});
+  }
+});
 Ext.define('Ext.form.field.Picker', {extend:Ext.form.field.Text, alias:'widget.pickerfield', alternateClassName:'Ext.form.Picker', config:{triggers:{picker:{handler:'onTriggerClick', scope:'this', focusOnMousedown:true}}}, renderConfig:{editable:true}, keyMap:{scope:'this', DOWN:'onDownArrow', ESC:'onEsc'}, keyMapTarget:'inputEl', isPickerField:true, matchFieldWidth:true, pickerAlign:'tl-bl?', openCls:Ext.baseCSSPrefix + 'pickerfield-open', isExpanded:false, applyTriggers:function(triggers) {
   var me = this, picker = triggers.picker;
   if (!picker.cls) {
@@ -69595,6 +70187,41 @@ ariaMinText:'The date must be equal to or after {0}', maxText:'The date in this 
   }
   me.callParent([e]);
 }});
+Ext.define('Ext.form.field.Display', {extend:Ext.form.field.Base, alias:'widget.displayfield', alternateClassName:['Ext.form.DisplayField', 'Ext.form.Display'], fieldSubTpl:['\x3cdiv id\x3d"{id}" data-ref\x3d"inputEl" role\x3d"textbox" aria-readonly\x3d"true"', ' aria-labelledby\x3d"{cmpId}-labelEl" {inputAttrTpl}', ' tabindex\x3d"\x3ctpl if\x3d"tabIdx !\x3d null"\x3e{tabIdx}\x3ctpl else\x3e-1\x3c/tpl\x3e"', '\x3ctpl if\x3d"fieldStyle"\x3e style\x3d"{fieldStyle}"\x3c/tpl\x3e', ' class\x3d"{fieldCls} {fieldCls}-{ui}"\x3e{value}\x3c/div\x3e', 
+{compiled:true, disableFormats:true}], ariaRole:undefined, focusable:false, skipLabelForAttribute:true, readOnly:true, fieldCls:Ext.baseCSSPrefix + 'form-display-field', fieldBodyCls:Ext.baseCSSPrefix + 'form-display-field-body', htmlEncode:false, noWrap:false, validateOnChange:false, initEvents:Ext.emptyFn, submitValue:false, getValue:function() {
+  return this.value;
+}, valueToRaw:function(value) {
+  if (value || value === 0 || value === false) {
+    return value;
+  } else {
+    return '';
+  }
+}, isDirty:function() {
+  return false;
+}, isValid:Ext.returnTrue, validate:Ext.returnTrue, getRawValue:function() {
+  return this.rawValue;
+}, setRawValue:function(value) {
+  var me = this;
+  value = Ext.valueFrom(value, '');
+  me.rawValue = value;
+  if (me.rendered) {
+    me.inputEl.dom.innerHTML = me.getDisplayValue();
+    me.updateLayout();
+  }
+  return value;
+}, getDisplayValue:function() {
+  var me = this, value = this.getRawValue(), renderer = me.renderer, display;
+  if (renderer) {
+    display = Ext.callback(renderer, me.scope, [value, me], 0, me);
+  } else {
+    display = me.htmlEncode ? Ext.util.Format.htmlEncode(value) : value;
+  }
+  return display;
+}, getSubTplData:function(fieldData) {
+  var ret = this.callParent(arguments);
+  ret.value = this.getDisplayValue();
+  return ret;
+}});
 Ext.define('Ext.form.field.FileButton', {extend:Ext.button.Button, alias:'widget.filebutton', childEls:['fileInputEl'], inputCls:Ext.baseCSSPrefix + 'form-file-input', cls:Ext.baseCSSPrefix + 'form-file-btn', preventDefault:false, tabIndex:undefined, useTabGuards:Ext.isIE || Ext.isEdge, promptCalled:false, autoEl:{tag:'div', unselectable:'on'}, afterTpl:['\x3cinput id\x3d"{id}-fileInputEl" data-ref\x3d"fileInputEl" class\x3d"{childElCls} {inputCls}" ', 'type\x3d"file" size\x3d"1" name\x3d"{inputName}" unselectable\x3d"on" ', 
 '\x3ctpl if\x3d"accept !\x3d null"\x3eaccept\x3d"{accept}"\x3c/tpl\x3e', '\x3ctpl if\x3d"tabIndex !\x3d null"\x3etabindex\x3d"{tabIndex}"\x3c/tpl\x3e', '\x3e'], keyMap:null, ariaEl:'fileInputEl', getAfterMarkup:function(values) {
   return this.lookupTpl('afterTpl').apply(values);
@@ -69862,6 +70489,12 @@ Ext.define('Ext.form.field.File', {extend:Ext.form.field.Text, alias:['widget.fi
 }, privates:{getFocusEl:function() {
   return this.button;
 }, getFocusClsEl:Ext.privateFn}});
+Ext.define('Ext.form.field.Hidden', {extend:Ext.form.field.Base, alias:['widget.hiddenfield', 'widget.hidden'], alternateClassName:'Ext.form.Hidden', focusable:false, inputType:'hidden', isTextInput:false, hideLabel:true, hidden:true, ariaRole:'presentation', initComponent:function() {
+  this.formItemCls += '-hidden';
+  this.callParent();
+}, isEqual:function(value1, value2) {
+  return this.isEqualAsString(value1, value2);
+}, initEvents:Ext.emptyFn, setSize:Ext.emptyFn, setWidth:Ext.emptyFn, setHeight:Ext.emptyFn, setPosition:Ext.emptyFn, setPagePosition:Ext.emptyFn, markInvalid:Ext.emptyFn, clearInvalid:Ext.emptyFn});
 Ext.define('Ext.tip.Tip', {extend:Ext.panel.Panel, xtype:'tip', alternateClassName:'Ext.Tip', minWidth:40, maxWidth:500, shadow:'sides', constrainPosition:true, autoRender:true, hidden:true, baseCls:Ext.baseCSSPrefix + 'tip', focusOnToFront:false, maskOnDisable:false, closeAction:'hide', alwaysFramed:true, frameHeader:false, initComponent:function() {
   var me = this;
   me.floating = Ext.apply({}, {shadow:me.shadow}, me.self.prototype.floating);
@@ -71391,6 +72024,881 @@ sourceedit:{title:'Source Edit', text:'Switch to source editing mode.', cls:Ext.
   return this.sourceEditMode ? this.textareaEl : this.iframeEl;
 }}});
 Ext.define('Ext.theme.neptune.form.field.HtmlEditor', {override:'Ext.form.field.HtmlEditor', defaultButtonUI:'plain-toolbar'});
+Ext.define('Ext.view.TagKeyNav', {extend:Ext.view.BoundListKeyNav, alias:'view.navigation.tagfield', onKeySpace:function(e) {
+  var me = this, field = me.view.pickerField;
+  if (field.isExpanded && field.inputEl.dom.value === '') {
+    field.preventKeyUpEvent = true;
+    me.navigateOnSpace = true;
+    me.callParent([e]);
+    e.stopEvent();
+    return false;
+  }
+  return true;
+}});
+Ext.define('Ext.form.field.Tag', {extend:Ext.form.field.ComboBox, xtype:'tagfield', noWrap:false, multiSelect:true, delimiter:',', tipTpl:undefined, forceSelection:true, createNewOnEnter:false, createNewOnBlur:false, encodeSubmitValue:false, triggerOnClick:true, stacked:false, filterPickList:false, clearOnBackspace:true, grow:true, growMin:false, growMax:false, simulatePlaceholder:true, selectOnFocus:true, ariaHelpText:'Use Up and Down arrows to view available values, Enter to select. ' + 'Use Left and Right arrows to view selected values, Delete key to deselect.', 
+ariaHelpTextEditable:'Use Up and Down arrows to view available values, Enter to select. ' + 'Type and press Enter to create a new value. ' + 'Use Left and Right arrows to view selected values, Delete key to deselect.', ariaSelectedText:'Selected {0}.', ariaDeselectedText:'{0} removed from selection.', ariaNoneSelectedText:'No value selected.', ariaSelectedListLabel:'Selected values', ariaAvailableListLabel:'Available values', fieldSubTpl:['\x3cdiv id\x3d"{cmpId}-listWrapper" data-ref\x3d"listWrapper"' + 
+(Ext.isGecko ? ' tabindex\x3d"-1"' : ''), '\x3ctpl foreach\x3d"ariaElAttributes"\x3e {$}\x3d"{.}"\x3c/tpl\x3e', ' class\x3d"' + Ext.baseCSSPrefix + 'tagfield {fieldCls} {typeCls} {typeCls}-{ui}"\x3ctpl if\x3d"wrapperStyle"\x3e style\x3d"{wrapperStyle}"\x3c/tpl\x3e\x3e', '\x3cspan id\x3d"{cmpId}-selectedText" data-ref\x3d"selectedText" aria-hidden\x3d"true" class\x3d"' + Ext.baseCSSPrefix + 'hidden-clip"\x3e\x3c/span\x3e', '\x3cul id\x3d"{cmpId}-itemList" data-ref\x3d"itemList" role\x3d"presentation" class\x3d"' + 
+Ext.baseCSSPrefix + 'tagfield-list{itemListCls}"\x3e', '\x3cli id\x3d"{cmpId}-inputElCt" data-ref\x3d"inputElCt" role\x3d"presentation" class\x3d"' + Ext.baseCSSPrefix + 'tagfield-input"\x3e', '\x3cinput id\x3d"{cmpId}-inputEl" data-ref\x3d"inputEl" type\x3d"{type}" ', '\x3ctpl if\x3d"name"\x3ename\x3d"{name}" \x3c/tpl\x3e', '\x3ctpl if\x3d"value"\x3e value\x3d"{[Ext.util.Format.htmlEncode(values.value)]}"\x3c/tpl\x3e', '\x3ctpl if\x3d"size"\x3esize\x3d"{size}" \x3c/tpl\x3e', '\x3ctpl if\x3d"tabIdx !\x3d null"\x3etabindex\x3d"{tabIdx}" \x3c/tpl\x3e', 
+'\x3ctpl if\x3d"disabled"\x3e disabled\x3d"disabled"\x3c/tpl\x3e', '\x3ctpl foreach\x3d"inputElAriaAttributes"\x3e {$}\x3d"{.}"\x3c/tpl\x3e', 'class\x3d"' + Ext.baseCSSPrefix + 'tagfield-input-field {inputElCls} {emptyCls} {fixCls}" autocomplete\x3d"off"\x3e', '\x3c/li\x3e', '\x3c/ul\x3e', '\x3cul id\x3d"{cmpId}-ariaList" data-ref\x3d"ariaList" role\x3d"listbox"', '\x3ctpl if\x3d"ariaSelectedListLabel"\x3e aria-label\x3d"{ariaSelectedListLabel}"\x3c/tpl\x3e', '\x3ctpl if\x3d"multiSelect"\x3e aria-multiselectable\x3d"true"\x3c/tpl\x3e', 
+' class\x3d"' + Ext.baseCSSPrefix + 'tagfield-arialist"\x3e', '\x3c/ul\x3e', '\x3c/div\x3e', {disableFormats:true}], postSubTpl:['\x3clabel id\x3d"{cmpId}-placeholderLabel" data-ref\x3d"placeholderLabel" for\x3d"{cmpId}-inputEl" class\x3d"{placeholderCoverCls} {placeholderCoverCls}-{ui} {emptyCls}"\x3e{emptyText}\x3c/label\x3e', '\x3c/div\x3e', '\x3ctpl for\x3d"triggers"\x3e{[values.renderTrigger(parent)]}\x3c/tpl\x3e', '\x3c/div\x3e'], extraFieldBodyCls:Ext.baseCSSPrefix + 'tagfield-body', childEls:['listWrapper', 
+'itemList', 'inputEl', 'inputElCt', 'selectedText', 'ariaList'], clearValueOnEmpty:false, ariaSelectable:true, ariaEl:'listWrapper', tagItemCls:Ext.baseCSSPrefix + 'tagfield-item', tagItemTextCls:Ext.baseCSSPrefix + 'tagfield-item-text', tagItemCloseCls:Ext.baseCSSPrefix + 'tagfield-item-close', tagItemSelector:'.' + Ext.baseCSSPrefix + 'tagfield-item', tagItemCloseSelector:'.' + Ext.baseCSSPrefix + 'tagfield-item-close', tagSelectedCls:Ext.baseCSSPrefix + 'tagfield-item-selected', initComponent:function() {
+  var me = this, typeAhead = me.typeAhead, delimiter = me.delimiter;
+  if (typeAhead && !me.editable) {
+    Ext.raise('If typeAhead is enabled the combo must be editable: true -- please change one of those settings.');
+  }
+  if (me.createNewOnEnter || me.createNewOnBlur) {
+    me.forceSelection = false;
+  }
+  me.typeAhead = false;
+  if (me.value == null) {
+    me.value = [];
+  }
+  me.selectionModel = new Ext.selection.Model({mode:'MULTI', onSelectChange:function(record, isSelected, suppressEvent, commitFn) {
+    commitFn();
+  }, listeners:{scope:me, selectionchange:me.onSelectionChange, focuschange:me.onFocusChange}});
+  if (!me.ariaHelp) {
+    me.ariaHelp = me.createNewOnEnter ? me.ariaHelpTextEditable : me.ariaHelpText;
+  }
+  me.callParent();
+  me.typeAhead = typeAhead;
+  if (delimiter && me.multiSelect) {
+    me.delimiterRegexp = new RegExp(Ext.String.escapeRegex(delimiter));
+  }
+}, initEvents:function() {
+  var me = this, inputEl = me.inputEl;
+  me.callParent(arguments);
+  if (!me.enableKeyEvents) {
+    inputEl.on('keydown', me.onKeyDown, me);
+    inputEl.on('keyup', me.onKeyUp, me);
+  }
+  me.listWrapper.on({scope:me, click:me.onItemListClick, mousedown:me.onItemMouseDown});
+}, createPicker:function() {
+  var me = this, config;
+  config = Ext.apply({navigationModel:'tagfield'}, me.defaultListConfig);
+  if (me.ariaAvailableListLabel) {
+    config.ariaRenderAttributes = {'aria-label':Ext.String.htmlEncode(me.ariaAvailableListLabel)};
+  }
+  me.defaultListConfig = config;
+  return me.callParent();
+}, isValid:function() {
+  var me = this, disabled = me.disabled, validate = me.forceValidation || !disabled;
+  return validate ? me.validateValue(me.getValue()) : disabled;
+}, onBindStore:function(store) {
+  var me = this;
+  me.callParent([store]);
+  if (store) {
+    me.valueStore = new Ext.data.Store({model:store.getModel(), proxy:'memory', useModelWarning:false});
+    me.selectionModel.bindStore(me.valueStore);
+    if (me.filterPickList) {
+      me.listFilter = new Ext.util.Filter({scope:me, filterFn:me.filterPicked});
+      me.changingFilters = true;
+      store.filter(me.listFilter);
+      me.changingFilters = false;
+    }
+  }
+}, filterPicked:function(rec) {
+  return !this.valueCollection.contains(rec);
+}, onUnbindStore:function(store) {
+  var me = this, valueStore = me.valueStore, picker = me.picker;
+  if (picker) {
+    picker.bindStore(null);
+  }
+  if (valueStore) {
+    valueStore.destroy();
+    me.valueStore = null;
+  }
+  if (me.filterPickList && !store.destroyed) {
+    me.changingFilters = true;
+    store.removeFilter(me.listFilter);
+    me.changingFilters = false;
+  }
+  me.callParent(arguments);
+}, clearInput:function() {
+  var me = this, valueRecords = me.getValueRecords(), inputValue = me.inputEl && me.inputEl.dom.value, lastDisplayValue;
+  if (valueRecords.length && inputValue) {
+    lastDisplayValue = valueRecords[valueRecords.length - 1].get(me.displayField);
+    if (!Ext.String.startsWith(lastDisplayValue, inputValue, true)) {
+      return;
+    }
+    me.inputEl.dom.value = '';
+    if (me.queryMode == 'local') {
+      me.clearLocalFilter();
+      me.getPicker().refresh();
+    }
+  }
+}, onValueCollectionEndUpdate:function() {
+  var me = this, pickedRecords = me.valueCollection.items, valueStore = me.valueStore;
+  if (me.isSelectionUpdating()) {
+    return;
+  }
+  if (me.filterPickList) {
+    me.changingFilters = true;
+    me.store.filter(me.listFilter);
+    me.changingFilters = false;
+  }
+  me.callParent();
+  Ext.suspendLayouts();
+  if (valueStore) {
+    valueStore.suspendEvents();
+    valueStore.loadRecords(pickedRecords);
+    valueStore.resumeEvents();
+  }
+  me.refreshEmptyText();
+  me.clearInput();
+  Ext.resumeLayouts(true);
+  me.alignPicker();
+}, checkValueOnDataChange:Ext.emptyFn, onSelectionChange:function(selModel, selectedRecs) {
+  var me = this, inputEl = me.inputEl, item;
+  me.applyMultiselectItemMarkup();
+  me.applyAriaListMarkup();
+  me.applyAriaSelectedText();
+  if (inputEl) {
+    if (selectedRecs.length === 0) {
+      inputEl.dom.removeAttribute('aria-activedescendant');
+    } else {
+      item = me.getAriaListNode(selectedRecs[0]);
+      if (item) {
+        inputEl.dom.setAttribute('aria-activedescendant', item.id);
+      }
+    }
+  }
+  me.fireEvent('valueselectionchange', me, selectedRecs);
+}, onFocusChange:function(selectionModel, oldFocused, newFocused) {
+  var me = this;
+  me.callParent([selectionModel, oldFocused, newFocused]);
+  me.fireEvent('valuefocuschange', me, oldFocused, newFocused);
+}, getAriaListNode:function(record) {
+  var ariaList = this.ariaList, node;
+  if (ariaList && record) {
+    node = ariaList.selectNode('[data-recordid\x3d"' + record.internalId + '"]');
+  }
+  return node;
+}, doDestroy:function() {
+  Ext.destroy(this.selectionModel);
+  this.callParent();
+}, getSubTplData:function(fieldData) {
+  var me = this, id = me.id, data = me.callParent(arguments), emptyText = me.emptyText, isEmpty = emptyText && data.value.length < 1, growMin = me.growMin, growMax = me.growMax, wrapperStyle = '', attr;
+  data.value = '';
+  data.emptyText = isEmpty ? emptyText : '';
+  data.itemListCls = '';
+  data.emptyCls = isEmpty ? me.emptyUICls : '';
+  if (me.grow) {
+    if (Ext.isNumber(growMin) && growMin > 0) {
+      wrapperStyle += 'min-height:' + growMin + 'px;';
+    }
+    if (Ext.isNumber(growMax) && growMax > 0) {
+      wrapperStyle += 'max-height:' + growMax + 'px;';
+    }
+  } else {
+    wrapperStyle += 'max-height: 1px;';
+  }
+  data.wrapperStyle = wrapperStyle;
+  if (me.stacked === true) {
+    data.itemListCls += ' ' + Ext.baseCSSPrefix + 'tagfield-stacked';
+  }
+  if (!me.multiSelect) {
+    data.itemListCls += ' ' + Ext.baseCSSPrefix + 'tagfield-singleselect';
+  }
+  if (!me.ariaStaticRoles[me.ariaRole]) {
+    data.multiSelect = me.multiSelect;
+    data.ariaSelectedListLabel = Ext.String.htmlEncode(me.ariaSelectedListLabel);
+    attr = data.ariaElAttributes;
+    if (attr) {
+      attr['aria-owns'] = id + '-inputEl ' + id + '-picker ' + id + '-ariaList';
+    }
+    attr = data.inputElAriaAttributes;
+    if (attr) {
+      attr.role = 'textbox';
+      attr['aria-describedby'] = id + '-selectedText ' + (attr['aria-describedby'] || '');
+    }
+  }
+  return data;
+}, onRender:function(container, index) {
+  var me = this;
+  me.callParent([container, index]);
+  me.emptyClsElements.push(me.listWrapper, me.placeholderLabel);
+}, afterRender:function() {
+  var me = this, inputEl = me.inputEl, emptyText = me.emptyText;
+  if (emptyText) {
+    if (Ext.supports.Placeholder && inputEl) {
+      inputEl.dom.removeAttribute('placeholder');
+    }
+  }
+  me.applyMultiselectItemMarkup();
+  me.applyAriaListMarkup();
+  me.applyAriaSelectedText();
+  me.callParent();
+}, findRecord:function(field, value) {
+  var matches = this.getStore().queryRecords(field, value);
+  return matches.length ? matches[0] : false;
+}, getCursorPosition:function() {
+  var cursorPos;
+  if (document.selection) {
+    cursorPos = document.selection.createRange();
+    cursorPos.collapse(true);
+    cursorPos.moveStart('character', -this.inputEl.dom.value.length);
+    cursorPos = cursorPos.text.length;
+  } else {
+    cursorPos = this.inputEl.dom.selectionStart;
+  }
+  return cursorPos;
+}, hasSelectedText:function() {
+  var inputEl = this.inputEl.dom, sel, range;
+  if (document.selection) {
+    sel = document.selection;
+    range = sel.createRange();
+    return range.parentElement() === inputEl;
+  } else {
+    return inputEl.selectionStart !== inputEl.selectionEnd;
+  }
+}, onKeyDown:function(e) {
+  var me = this, key = e.getKey(), inputEl = me.inputEl, rawValue = inputEl && inputEl.dom.value, valueCollection = me.valueCollection, selModel = me.selectionModel, stopEvent = false, valueCount, lastSelectionIndex, records, text, i, len;
+  if (me.destroyed || me.readOnly || me.disabled || !me.editable) {
+    return;
+  }
+  valueCount = valueCollection.getCount();
+  if (valueCount > 0 && rawValue === '') {
+    lastSelectionIndex = selModel.getCount() > 0 ? valueCollection.indexOf(selModel.getLastSelected()) : -1;
+    if (key === e.BACKSPACE && me.clearOnBackspace || key === e.DELETE && lastSelectionIndex > -1) {
+      if (lastSelectionIndex > -1) {
+        if (selModel.getCount() > 1) {
+          lastSelectionIndex = -1;
+        }
+        records = selModel.getSelection();
+        text = [];
+        for (i = 0, len = records.length; i < len; i++) {
+          text.push(records[i].get(me.displayField));
+        }
+        text = text.join(', ');
+      } else {
+        records = valueCollection.last();
+        text = records.get(me.displayField);
+      }
+      valueCollection.remove(records);
+      if (text) {
+        me.ariaErrorEl.dom.innerHTML = Ext.String.formatEncode(me.ariaDeselectedText, text);
+      }
+      selModel.clearSelections();
+      if (lastSelectionIndex === valueCount - 1) {
+        selModel.select(valueCollection.last());
+      } else {
+        if (lastSelectionIndex > -1) {
+          selModel.select(lastSelectionIndex);
+        } else {
+          if (valueCollection.getCount()) {
+            selModel.select(valueCollection.last());
+          }
+        }
+      }
+      stopEvent = true;
+    } else {
+      if (key === e.RIGHT || key === e.LEFT) {
+        if (lastSelectionIndex === -1 && key === e.LEFT) {
+          selModel.select(valueCollection.last());
+          stopEvent = true;
+        } else {
+          if (lastSelectionIndex > -1) {
+            if (key === e.RIGHT) {
+              if (lastSelectionIndex < valueCount - 1) {
+                selModel.select(lastSelectionIndex + 1, e.shiftKey);
+                stopEvent = true;
+              } else {
+                if (!e.shiftKey) {
+                  selModel.deselectAll();
+                  stopEvent = true;
+                }
+              }
+            } else {
+              if (key === e.LEFT && lastSelectionIndex > 0) {
+                selModel.select(lastSelectionIndex - 1, e.shiftKey);
+                stopEvent = true;
+              }
+            }
+          }
+        }
+      } else {
+        if (key === e.A && e.ctrlKey) {
+          selModel.selectAll();
+          stopEvent = e.A;
+        }
+      }
+    }
+  }
+  if (stopEvent) {
+    me.preventKeyUpEvent = stopEvent;
+    e.stopEvent();
+    return;
+  }
+  if (me.isExpanded && key === e.ENTER && me.picker.highlightedItem) {
+    me.preventKeyUpEvent = true;
+  }
+  if (me.enableKeyEvents) {
+    me.callParent(arguments);
+  }
+  if (!e.isSpecialKey() && !e.hasModifier()) {
+    selModel.deselectAll();
+  }
+}, onKeyUp:function(e, t) {
+  var me = this, inputEl = me.inputEl, rawValue = inputEl.dom.value, preventKeyUpEvent = me.preventKeyUpEvent;
+  if (me.preventKeyUpEvent) {
+    e.stopEvent();
+    if (preventKeyUpEvent === true || e.getKey() === preventKeyUpEvent) {
+      delete me.preventKeyUpEvent;
+    }
+    return;
+  }
+  if (me.multiSelect && me.delimiterRegexp && me.delimiterRegexp.test(rawValue) || me.createNewOnEnter && e.getKey() === e.ENTER) {
+    if (me.createNewOnEnter && rawValue) {
+      me.ariaErrorEl.dom.innerHTML = Ext.String.formatEncode(me.ariaSelectedText, rawValue);
+    }
+    rawValue = Ext.Array.clean(rawValue.split(me.delimiterRegexp));
+    inputEl.dom.value = '';
+    me.setValue(me.valueStore.getRange().concat(rawValue));
+    inputEl.focus();
+  }
+  me.callParent([e, t]);
+}, onEsc:function(e) {
+  var me = this, selModel = me.selectionModel, isExpanded = me.isExpanded;
+  me.callParent([e]);
+  if (!isExpanded && selModel.getCount() > 0) {
+    selModel.deselectAll();
+  }
+  e.stopEvent();
+}, onTypeAhead:function() {
+  var me = this, displayField = me.displayField, inputElDom = me.inputEl.dom, record = me.getStore().findRecord(displayField, inputElDom.value), newValue, len, selStart;
+  if (record) {
+    newValue = record.get(displayField);
+    len = newValue.length;
+    selStart = inputElDom.value.length;
+    if (selStart !== 0 && selStart !== len) {
+      me.lastMutatedValue = newValue;
+      inputElDom.value = newValue;
+      me.selectText(selStart, newValue.length);
+    }
+  }
+}, onItemListClick:function(e) {
+  var me = this, selectionModel = me.selectionModel, itemEl = e.getTarget(me.tagItemSelector), closeEl = itemEl ? e.getTarget(me.tagItemCloseSelector) : false;
+  if (me.readOnly || me.disabled) {
+    return;
+  }
+  e.stopPropagation();
+  if (itemEl) {
+    if (closeEl) {
+      me.removeByListItemNode(itemEl);
+      if (me.valueStore.getCount() > 0) {
+        me.fireEvent('select', me, me.valueStore.getRange());
+      }
+    } else {
+      me.toggleSelectionByListItemNode(itemEl, e.shiftKey);
+    }
+    if (!Ext.supports.TouchEvents) {
+      me.inputEl.focus();
+    }
+  } else {
+    if (selectionModel.getCount() > 0) {
+      selectionModel.deselectAll();
+    }
+    me.inputEl.focus();
+    if (me.triggerOnClick) {
+      me.onTriggerClick();
+    }
+  }
+}, onItemMouseDown:function(e) {
+  if (e.target !== this.inputEl.dom) {
+    e.preventDefault();
+  }
+}, getMultiSelectItemMarkup:function() {
+  var me = this, childElCls = me._getChildElCls && me._getChildElCls() || '';
+  if (!me.multiSelectItemTpl) {
+    if (!me.labelTpl) {
+      me.labelTpl = '{' + me.displayField + '}';
+    }
+    me.labelTpl = me.lookupTpl('labelTpl');
+    if (me.tipTpl) {
+      me.tipTpl = me.lookupTpl('tipTpl');
+    }
+    me.multiSelectItemTpl = new Ext.XTemplate(['\x3ctpl for\x3d"."\x3e', '\x3cli data-selectionIndex\x3d"{[xindex - 1]}" data-recordId\x3d"{internalId}" role\x3d"presentation" class\x3d"' + me.tagItemCls + childElCls, '\x3ctpl if\x3d"this.isSelected(values)"\x3e', ' ' + me.tagSelectedCls, '\x3c/tpl\x3e', '{%', 'values \x3d values.data;', '%}', me.tipTpl ? '" data-qtip\x3d"{[this.getTip(values)]}"\x3e' : '"\x3e', '\x3cdiv role\x3d"presentation" class\x3d"' + me.tagItemTextCls + '"\x3e{[this.getItemLabel(values)]}\x3c/div\x3e', 
+    '\x3cdiv role\x3d"presentation" class\x3d"' + me.tagItemCloseCls + childElCls + '"\x3e\x3c/div\x3e', '\x3c/li\x3e', '\x3c/tpl\x3e', {isSelected:function(rec) {
+      return me.selectionModel.isSelected(rec);
+    }, getItemLabel:function(values) {
+      return Ext.String.htmlEncode(me.labelTpl.apply(values));
+    }, getTip:function(values) {
+      return Ext.String.htmlEncode(me.tipTpl.apply(values));
+    }, strict:true}]);
+  }
+  if (!me.multiSelectItemTpl.isTemplate) {
+    me.multiSelectItemTpl = this.lookupTpl('multiSelectItemTpl');
+  }
+  return me.multiSelectItemTpl.apply(me.valueCollection.getRange());
+}, applyMultiselectItemMarkup:function() {
+  var me = this, itemList = me.itemList;
+  if (itemList) {
+    itemList.select('.' + Ext.baseCSSPrefix + 'tagfield-item').destroy();
+    me.inputElCt.insertHtml('beforeBegin', me.getMultiSelectItemMarkup());
+    me.autoSize();
+  }
+}, getAriaListMarkup:function() {
+  var me = this, store, values;
+  if (!me.ariaListItemTpl) {
+    me.ariaListItemTpl = new Ext.XTemplate(['\x3ctpl for\x3d"."\x3e', '\x3cli id\x3d"' + me.id + '-{internalId}" role\x3d"option"', ' class\x3d"' + Ext.baseCSSPrefix + 'tagfield-arialist-item"', ' aria-selected\x3d"{[this.isPicked(values)]}"', '  data-recordId\x3d"{internalId}"', '\x3e', '{[this.getItemLabel(values.data)]}', '\x3c/li\x3e', '\x3c/tpl\x3e', {isPicked:function(rec) {
+      return me.filterPicked(rec) ? 'false' : 'true';
+    }, isSelected:function(rec) {
+      return me.selectionModel.isSelected(rec) ? 'true' : 'false';
+    }, getItemLabel:function(values) {
+      return Ext.String.htmlEncode(me.labelTpl.apply(values));
+    }, strict:true}]);
+  }
+  if (!me.ariaListItemTpl.isTemplate) {
+    me.ariaListtemTpl = me.lookupTpl('ariaListItemTpl');
+  }
+  values = me.valueCollection.getRange();
+  return me.ariaListItemTpl.apply(values);
+}, applyAriaListMarkup:function() {
+  var me = this, ariaList = me.ariaList;
+  if (ariaList) {
+    ariaList.select('*').destroy();
+    ariaList.insertHtml('afterBegin', me.getAriaListMarkup());
+  }
+}, getAriaSelectedText:function(values) {
+  var me = this;
+  if (!me.ariaSelectedItemTpl) {
+    me.ariaSelectedItemTpl = new Ext.XTemplate(['\x3ctpl for\x3d"." between\x3d", "\x3e', '{[this.getItemLabel(values.data)]}', '\x3c/tpl\x3e', {getItemLabel:function(values) {
+      return Ext.String.htmlEncode(me.labelTpl.apply(values));
+    }, strict:true}]);
+  }
+  if (!me.ariaSelectedItemTpl.isTemplate) {
+    me.ariaSelectedItemTpl = me.lookupTpl('ariaSelectedItemTpl');
+  }
+  return Ext.String.format(me.ariaSelectedText, me.ariaSelectedItemTpl.apply(values));
+}, applyAriaSelectedText:function() {
+  var me = this, selectedText = me.selectedText, records, text;
+  if (selectedText) {
+    records = me.valueCollection.getRange();
+    text = records.length ? me.getAriaSelectedText(records) : me.ariaNoneSelectedText;
+    selectedText.dom.innerHTML = Ext.String.htmlEncode(text);
+  }
+}, getRecordByListItemNode:function(itemEl) {
+  return this.valueCollection.items[Number(itemEl.getAttribute('data-selectionIndex'))];
+}, toggleSelectionByListItemNode:function(itemEl, keepExisting) {
+  var me = this, rec = me.getRecordByListItemNode(itemEl), selModel = me.selectionModel;
+  if (rec) {
+    if (selModel.isSelected(rec)) {
+      selModel.deselect(rec);
+    } else {
+      selModel.select(rec, keepExisting);
+    }
+  }
+}, removeByListItemNode:function(itemEl) {
+  var me = this, rec = me.getRecordByListItemNode(itemEl);
+  if (rec) {
+    me.pickerSelectionModel.deselect(rec);
+  }
+}, getDisplayValue:function() {
+  return this.getRawValue();
+}, getRawValue:function() {
+  var me = this, records = me.getValueRecords(), values = [], i, len;
+  for (i = 0, len = records.length; i < len; i++) {
+    values.push(records[i].data[me.displayField]);
+  }
+  return values.join(',');
+}, setRawValue:function(value) {
+  return;
+}, removeValue:function(value) {
+  var me = this, valueCollection = me.valueCollection, len, i, item, toRemove = [];
+  if (value) {
+    value = Ext.Array.from(value);
+    for (i = 0, len = value.length; i < len; ++i) {
+      item = value[i];
+      if (!item.isModel) {
+        item = valueCollection.byValue.get(item);
+      }
+      if (item) {
+        toRemove.push(item);
+      }
+    }
+    me.valueCollection.beginUpdate();
+    me.pickerSelectionModel.deselect(toRemove);
+    me.valueCollection.endUpdate();
+  }
+}, getValue:function() {
+  var value = this.callParent();
+  if (value) {
+    value = Ext.Array.from(value);
+  }
+  return value;
+}, setValue:function(value, add, skipLoad) {
+  var me = this, valueStore = me.valueStore, valueField = me.valueField, unknownValues = [], store = me.store, autoLoadOnValue = me.autoLoadOnValue, isLoaded = store.getCount() > 0 || store.isLoaded(), pendingLoad = store.hasPendingLoad(), unloaded = autoLoadOnValue && !isLoaded && !pendingLoad, record, len, i, valueRecord, cls, params, isNull;
+  if (Ext.isEmpty(value)) {
+    value = null;
+    isNull = true;
+  } else {
+    if (Ext.isString(value) && me.multiSelect) {
+      value = value.split(me.delimiter);
+    } else {
+      value = Ext.Array.from(value, true);
+    }
+  }
+  if (!isNull && me.queryMode === 'remote' && !store.isEmptyStore && skipLoad !== true && unloaded) {
+    for (i = 0, len = value.length; i < len; i++) {
+      record = value[i];
+      if (!record || !record.isModel) {
+        valueRecord = valueStore.findExact(valueField, record);
+        if (valueRecord > -1) {
+          value[i] = valueStore.getAt(valueRecord);
+        } else {
+          valueRecord = me.findRecord(valueField, record);
+          if (!valueRecord) {
+            if (me.forceSelection) {
+              unknownValues.push(record);
+            } else {
+              valueRecord = {};
+              valueRecord[me.valueField] = record;
+              valueRecord[me.displayField] = record;
+              cls = me.valueStore.getModel();
+              valueRecord = new cls(valueRecord);
+            }
+          }
+          if (valueRecord) {
+            value[i] = valueRecord;
+          }
+        }
+      }
+    }
+    if (unknownValues.length) {
+      params = {};
+      params[me.valueParam || me.valueField] = unknownValues.join(me.delimiter);
+      store.load({params:params, callback:function() {
+        me.setValue(value, add, true);
+        me.autoSize();
+        me.lastQuery = false;
+      }});
+      return false;
+    }
+  }
+  if (!isNull && !me.multiSelect && value.length > 0) {
+    for (i = value.length - 1; i >= 0; i--) {
+      if (value[i].isModel) {
+        value = value[i];
+        break;
+      }
+    }
+    if (Ext.isArray(value)) {
+      value = value[value.length - 1];
+    }
+  }
+  return me.callParent([value, add]);
+}, updateValue:function() {
+  var me = this, valueArray = me.valueCollection.getRange(), len = valueArray.length, i;
+  for (i = 0; i < len; i++) {
+    valueArray[i] = valueArray[i].get(me.valueField);
+  }
+  me.setHiddenValue(valueArray);
+  me.value = me.multiSelect ? valueArray : valueArray[0];
+  if (!Ext.isDefined(me.value)) {
+    me.value = undefined;
+  }
+  me.applyMultiselectItemMarkup();
+  me.applyAriaListMarkup();
+  me.applyAriaSelectedText();
+  me.checkChange();
+}, getValueRecords:function() {
+  return this.valueCollection.getRange();
+}, getSubmitData:function() {
+  var me = this, val = me.callParent(arguments);
+  if (me.multiSelect && me.encodeSubmitValue && val && val[me.name]) {
+    val[me.name] = Ext.encode(val[me.name]);
+  }
+  return val;
+}, assertValue:function() {
+  var me = this, rawValue = me.inputEl.dom.value, rec = !Ext.isEmpty(rawValue) ? me.findRecordByDisplay(rawValue) : false, value = false;
+  if (!rec && !me.forceSelection && me.createNewOnBlur && !Ext.isEmpty(rawValue)) {
+    value = rawValue;
+  } else {
+    if (rec) {
+      value = rec;
+    }
+  }
+  if (value) {
+    me.addValue(value);
+  }
+  me.inputEl.dom.value = '';
+  me.collapse();
+  me.refreshEmptyText();
+}, isEqual:function(v1, v2) {
+  var fromArray = Ext.Array.from, valueField = this.valueField, i, len, t1, t2;
+  v1 = fromArray(v1);
+  v2 = fromArray(v2);
+  len = v1.length;
+  if (len !== v2.length) {
+    return false;
+  }
+  for (i = 0; i < len; i++) {
+    t1 = v1[i].isModel ? v1[i].get(valueField) : v1[i];
+    t2 = v2[i].isModel ? v2[i].get(valueField) : v2[i];
+    if (t1 !== t2) {
+      return false;
+    }
+  }
+  return true;
+}, onFocus:function() {
+  var me = this, focusCls = me.focusCls, itemList = me.itemList;
+  if (focusCls && itemList) {
+    itemList.addCls(focusCls);
+  }
+  me.callParent(arguments);
+}, onBlur:function() {
+  var me = this, focusCls = me.focusCls, itemList = me.itemList;
+  if (focusCls && itemList) {
+    itemList.removeCls(focusCls);
+  }
+  me.callParent(arguments);
+}, renderActiveError:function() {
+  var me = this, invalidCls = me.invalidCls, itemList = me.itemList, hasError = me.hasActiveError();
+  if (invalidCls && itemList) {
+    itemList[hasError ? 'addCls' : 'removeCls'](me.invalidCls + '-field');
+  }
+  me.callParent(arguments);
+}, autoSize:function() {
+  var me = this;
+  if (me.grow && me.rendered) {
+    me.autoSizing = true;
+    me.updateLayout();
+  }
+  return me;
+}, afterComponentLayout:function() {
+  var me = this, height;
+  if (me.autoSizing) {
+    height = me.getHeight();
+    if (height !== me.lastInputHeight) {
+      if (me.isExpanded) {
+        me.alignPicker();
+      }
+      me.fireEvent('autosize', me, height);
+      me.lastInputHeight = height;
+      me.autoSizing = false;
+    }
+  }
+}});
+Ext.define('Ext.picker.Time', {extend:Ext.view.BoundList, alias:'widget.timepicker', config:{store:true}, statics:{createStore:function(format, increment) {
+  var dateUtil = Ext.Date, clearTime = dateUtil.clearTime, initDate = this.prototype.initDate, times = [], min = clearTime(new Date(initDate[0], initDate[1], initDate[2])), max = dateUtil.add(clearTime(new Date(initDate[0], initDate[1], initDate[2])), 'mi', 24 * 60 - 1);
+  while (min <= max) {
+    times.push({disp:dateUtil.dateFormat(min, format), date:min});
+    min = dateUtil.add(min, 'mi', increment);
+  }
+  return new Ext.data.Store({model:Ext.picker.Time.prototype.modelType, data:times});
+}}, increment:15, format:'g:i A', displayField:'disp', initDate:[2008, 0, 1], componentCls:Ext.baseCSSPrefix + 'timepicker', alignOnScroll:false, loadMask:false, initComponent:function() {
+  var me = this, dateUtil = Ext.Date, clearTime = dateUtil.clearTime, initDate = me.initDate;
+  me.absMin = clearTime(new Date(initDate[0], initDate[1], initDate[2]));
+  me.absMax = dateUtil.add(clearTime(new Date(initDate[0], initDate[1], initDate[2])), 'mi', 24 * 60 - 1);
+  me.updateList();
+  me.callParent();
+}, setStore:function(store) {
+  this.store = store === true ? Ext.picker.Time.createStore(this.format, this.increment) : store;
+}, setMinValue:function(value) {
+  this.minValue = value;
+  this.updateList();
+}, setMaxValue:function(value) {
+  this.maxValue = value;
+  this.updateList();
+}, normalizeDate:function(date) {
+  var initDate = this.initDate;
+  date.setFullYear(initDate[0], initDate[1], initDate[2]);
+  return date;
+}, updateList:function() {
+  var me = this, min = me.normalizeDate(me.minValue || me.absMin), max = me.normalizeDate(me.maxValue || me.absMax), filters = me.getStore().getFilters(), filter = me.rangeFilter;
+  filters.beginUpdate();
+  if (filter) {
+    filters.remove(filter);
+  }
+  filter = me.rangeFilter = new Ext.util.Filter({filterFn:function(record) {
+    var date = record.get('date');
+    return date >= min && date <= max;
+  }});
+  filters.add(filter);
+  filters.endUpdate();
+}}, function() {
+  this.prototype.modelType = Ext.define(null, {extend:'Ext.data.Model', fields:['disp', 'date']});
+});
+Ext.define('Ext.form.field.Time', {extend:Ext.form.field.ComboBox, alias:'widget.timefield', alternateClassName:['Ext.form.TimeField', 'Ext.form.Time'], triggerCls:Ext.baseCSSPrefix + 'form-time-trigger', minText:'The time in this field must be equal to or after {0}', maxText:'The time in this field must be equal to or before {0}', invalidText:'{0} is not a valid time', format:'g:i A', altFormats:'g:ia|g:iA|g:i a|g:i A|h:i|g:i|H:i|ga|ha|gA|h a|g a|g A|gi|hi|gia|hia|g|H|gi a|hi a|giA|hiA|gi A|hi A', 
+formatText:'Expected time format HH:MM space AM or PM', increment:15, pickerMaxHeight:300, selectOnTab:true, snapToIncrement:false, valuePublishEvent:['select', 'blur'], initDate:'1/1/2008', initDateParts:[2008, 0, 1], initDateFormat:'j/n/Y', queryMode:'local', displayField:'disp', valueField:'date', initComponent:function() {
+  var me = this, min = me.minValue, max = me.maxValue;
+  if (min) {
+    me.setMinValue(min);
+  }
+  if (max) {
+    me.setMaxValue(max);
+  }
+  me.displayTpl = new Ext.XTemplate('\x3ctpl for\x3d"."\x3e' + '{[typeof values \x3d\x3d\x3d "string" ? values : this.formatDate(values["' + me.displayField + '"])]}' + '\x3ctpl if\x3d"xindex \x3c xcount"\x3e' + me.delimiter + '\x3c/tpl\x3e' + '\x3c/tpl\x3e', {formatDate:me.formatDate.bind(me)});
+  me.store = Ext.picker.Time.createStore(me.format, me.increment);
+  me.callParent();
+  me.getPicker();
+}, afterQuery:function(queryPlan) {
+  var me = this;
+  me.callParent([queryPlan]);
+  if (me.value === null && me.getRawValue() && me.validateOnChange) {
+    me.validate();
+  }
+}, isEqual:function(v1, v2) {
+  var fromArray = Ext.Array.from, isEqual = Ext.Date.isEqual, i, len;
+  v1 = fromArray(v1);
+  v2 = fromArray(v2);
+  len = v1.length;
+  if (len !== v2.length) {
+    return false;
+  }
+  for (i = 0; i < len; i++) {
+    if (!(v2[i] instanceof Date) || !(v1[i] instanceof Date) || !isEqual(v2[i], v1[i])) {
+      return false;
+    }
+  }
+  return true;
+}, setMinValue:function(value) {
+  var me = this, picker = me.picker;
+  me.setLimit(value, true);
+  if (picker) {
+    picker.setMinValue(me.minValue);
+  }
+}, setMaxValue:function(value) {
+  var me = this, picker = me.picker;
+  me.setLimit(value, false);
+  if (picker) {
+    picker.setMaxValue(me.maxValue);
+  }
+}, setLimit:function(value, isMin) {
+  var me = this, d, val;
+  if (Ext.isString(value)) {
+    d = me.parseDate(value);
+  } else {
+    if (Ext.isDate(value)) {
+      d = value;
+    }
+  }
+  if (d) {
+    val = me.getInitDate();
+    val.setHours(d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+  } else {
+    val = null;
+  }
+  me[isMin ? 'minValue' : 'maxValue'] = val;
+}, getInitDate:function(hours, minutes, seconds) {
+  var parts = this.initDateParts;
+  return new Date(parts[0], parts[1], parts[2], hours || 0, minutes || 0, seconds || 0, 0);
+}, valueToRaw:function(value) {
+  return this.formatDate(this.parseDate(value));
+}, getErrors:function(value) {
+  value = arguments.length > 0 ? value : this.getRawValue();
+  var me = this, format = Ext.String.format, errors = me.callParent([value]), minValue = me.minValue, maxValue = me.maxValue, data = me.displayTplData, raw = me.getRawValue(), i, len, date, item;
+  if (data && data.length > 0) {
+    for (i = 0, len = data.length; i < len; i++) {
+      item = data[i];
+      item = item.date || item.disp;
+      date = me.parseDate(item);
+      if (!date) {
+        errors.push(format(me.invalidText, item, Ext.Date.unescapeFormat(me.format)));
+        continue;
+      }
+    }
+  } else {
+    if (raw.length) {
+      date = me.parseDate(raw);
+      if (!date) {
+        errors.push(format(me.invalidText, raw, Ext.Date.unescapeFormat(me.format)));
+      }
+    }
+  }
+  if (!errors.length) {
+    if (minValue && date < minValue) {
+      errors.push(format(me.minText, me.formatDate(minValue)));
+    }
+    if (maxValue && date > maxValue) {
+      errors.push(format(me.maxText, me.formatDate(maxValue)));
+    }
+  }
+  return errors;
+}, formatDate:function(items) {
+  var formatted = [], i, len;
+  items = Ext.Array.from(items);
+  for (i = 0, len = items.length; i < len; i++) {
+    formatted.push(Ext.form.field.Date.prototype.formatDate.call(this, items[i]));
+  }
+  return formatted.join(this.delimiter);
+}, parseDate:function(value) {
+  var me = this, val = value, altFormats = me.altFormats, altFormatsArray = me.altFormatsArray, i = 0, len;
+  if (value && !Ext.isDate(value)) {
+    val = me.safeParse(value, me.format);
+    if (!val && altFormats) {
+      altFormatsArray = altFormatsArray || altFormats.split('|');
+      len = altFormatsArray.length;
+      for (; i < len && !val; ++i) {
+        val = me.safeParse(value, altFormatsArray[i]);
+      }
+    }
+  }
+  if (val && me.snapToIncrement) {
+    val = new Date(Ext.Number.snap(val.getTime(), me.increment * 60 * 1000));
+  }
+  return val;
+}, safeParse:function(value, format) {
+  var me = this, utilDate = Ext.Date, parsedDate, result = null;
+  if (utilDate.formatContainsDateInfo(format)) {
+    result = utilDate.parse(value, format);
+  } else {
+    parsedDate = utilDate.parse(me.initDate + ' ' + value, me.initDateFormat + ' ' + format);
+    if (parsedDate) {
+      result = parsedDate;
+    }
+  }
+  return result;
+}, getSubmitValue:function() {
+  var me = this, format = me.submitFormat || me.format, value = me.getValue();
+  return value ? Ext.Date.format(value, format) : null;
+}, createPicker:function() {
+  var me = this;
+  me.listConfig = Ext.apply({xtype:'timepicker', pickerField:me, cls:undefined, minValue:me.minValue, maxValue:me.maxValue, increment:me.increment, format:me.format, maxHeight:me.pickerMaxHeight}, me.listConfig);
+  return me.callParent();
+}, completeEdit:function() {
+  var me = this, val = me.getValue();
+  me.callParent(arguments);
+  if (me.validateValue(val)) {
+    me.setValue(val);
+  }
+}, findRecordByValue:function(value) {
+  if (typeof value === 'string') {
+    value = this.parseDate(value);
+  }
+  return this.callParent([value]);
+}, rawToValue:function(item) {
+  var me = this, items, values, i, len;
+  if (me.multiSelect) {
+    values = [];
+    items = Ext.Array.from(item);
+    for (i = 0, len = items.length; i < len; i++) {
+      values.push(me.parseDate(items[i]));
+    }
+    return values;
+  }
+  return me.parseDate(item);
+}, setValue:function(v) {
+  var me = this;
+  if (me.creatingPicker) {
+    return;
+  }
+  me.getPicker();
+  if (Ext.isDate(v)) {
+    v = me.getInitDate(v.getHours(), v.getMinutes(), v.getSeconds());
+  }
+  return me.callParent([v]);
+}, getValue:function() {
+  return this.rawToValue(this.callParent(arguments));
+}});
+Ext.define('Ext.form.field.Trigger', {extend:Ext.form.field.Text, alias:['widget.triggerfield', 'widget.trigger'], alternateClassName:['Ext.form.TriggerField', 'Ext.form.TwinTriggerField', 'Ext.form.Trigger'], triggerCls:Ext.baseCSSPrefix + 'form-arrow-trigger', inheritableStatics:{warnDeprecated:function() {
+  Ext.log.warn('Ext.form.field.Trigger is deprecated. Use Ext.form.field.Text instead.');
+}}, onClassExtended:function() {
+  this.warnDeprecated();
+}, constructor:function(config) {
+  this.self.warnDeprecated();
+  this.callParent([config]);
+}});
 Ext.define('Ext.grid.CellContext', {isCellContext:true, generation:0, constructor:function(view) {
   this.view = view;
 }, setPosition:function(row, col) {
@@ -83613,15 +85121,19 @@ Ext.define('Ext.ux.layout.ResponsiveColumn', {extend:Ext.layout.container.Auto, 
   }
 });
 Ext.define('Admin.model.Base', {extend:Ext.data.Model, schema:{namespace:'Admin.model'}});
-Ext.define('Admin.model.order.OrderModel', {extend:Ext.data.Model, fields:[{type:'int', name:'id'}, {type:'string', name:'orderNumber'}, {type:'date', name:'createTime', dateFormat:'Y/m/d H:i:s'}], proxy:{type:'rest', url:'/order'}});
+Ext.define('Admin.model.leave.LeaveModel', {extend:Admin.model.Base, fields:[{type:'int', name:'id'}, {type:'string', name:'userId'}, {type:'date', name:'startTime', dateFormat:'Y/m/d H:i:s'}, {type:'date', name:'endTime', dateFormat:'Y/m/d H:i:s'}, {type:'date', name:'realityStartTime', dateFormat:'Y/m/d H:i:s'}, {type:'date', name:'realityEndTime', dateFormat:'Y/m/d H:i:s'}, {type:'date', name:'applyTime', dateFormat:'Y/m/d H:i:s'}, {type:'string', name:'leaveType'}, {type:'string', name:'processStatus'}, 
+{type:'string', name:'reason'}, {type:'string', name:'processInstanceId'}], proxy:{type:'rest', url:'/leave'}});
+Ext.define('Admin.model.leaveapprove.LeaveApproveModel', {extend:Admin.model.Base, fields:[{type:'int', name:'id'}, {type:'string', name:'userId'}, {type:'date', name:'startTime'}, {type:'date', name:'endTime'}, {type:'date', name:'realityStartTime'}, {type:'date', name:'realityEndTime'}, {type:'date', name:'applyTime'}, {type:'string', name:'leaveType'}, {type:'string', name:'processStatus'}, {type:'string', name:'reason'}, {type:'string', name:'processInstanceId'}, {type:'string', name:'taskId'}, 
+{type:'string', name:'taskName'}, {type:'date', name:'taskCreateTime'}, {type:'string', name:'assignee'}, {type:'string', name:'taskDefinitionKey'}, {type:'string', name:'processDefinitionId'}, {type:'boolean', name:'suspended'}, {type:'int', name:'version'}]});
 Ext.define('Admin.model.process.definition.ProcessDefinitionModel', {extend:Admin.model.Base, fields:[{type:'string', name:'id'}, {type:'string', name:'category'}, {type:'string', name:'name'}, {type:'string', name:'key'}, {type:'string', name:'description'}, {type:'int', name:'version'}, {type:'string', name:'resourceName'}, {type:'string', name:'deploymentId'}, {type:'string', name:'diagramResourceName'}, {type:'string', name:'tenantId'}, {type:'boolean', name:'startFormKey'}, {type:'boolean', 
 name:'graphicalNotation'}, {type:'boolean', name:'suspended'}]});
-Ext.define('Admin.model.user.UserModel', {extend:Ext.data.Model, fields:[{type:'int', name:'id'}, {type:'string', name:'userName'}, {type:'string', name:'password'}, {type:'date', name:'birthday', dateFormat:'Y/m/d H:i:s'}], proxy:{type:'rest', url:'/user'}});
-Ext.define('Admin.store.NavigationTree', {extend:Ext.data.TreeStore, storeId:'NavigationTree', fields:[{name:'text'}], root:{expanded:true, children:[{text:'Dashboard', iconCls:'x-fa fa-desktop', rowCls:'nav-tree-badge nav-tree-badge-new', viewType:'admindashboard', routeId:'dashboard', leaf:true}, {text:'订单管理模块', iconCls:'x-fa fa-wpforms', viewType:'order', leaf:true}, {text:'用户管理模块', iconCls:'x-fa fa-address-card-o', viewType:'user', leaf:true}, {text:'流程定义模块', iconCls:'x-fa fa-address-card', viewType:'processDefinitionCenterPanel', 
-leaf:true}, {text:'Login', iconCls:'x-fa fa-check', viewType:'login', leaf:true}]}});
-Ext.define('Admin.store.order.OrderGridStroe', {extend:Ext.data.Store, alias:'store.orderGridStroe', model:'Admin.model.order.OrderModel', storeId:'orderGridStroe', proxy:{type:'rest', url:'/order', reader:{type:'json', rootProperty:'content', totalProperty:'totalElements'}, writer:{type:'json'}, simpleSortMode:true}, autoLoad:'true', autoSync:true, pageSize:20, remoteSort:true, sorters:{direction:'DESC', property:'id'}});
-Ext.define('Admin.store.process.definition.ProcessDefinitionStroe', {extend:Ext.data.Store, alias:'store.processDefinitionStroe', model:'Admin.model.process.definition.ProcessDefinitionModel', storeId:'processDefinitionStroe', pageSize:15, proxy:{type:'ajax', url:'/process-definition', reader:new Ext.data.JsonReader({type:'json', rootProperty:'content', totalProperty:'totalElements'}), simpleSortMode:true}, remoteSort:true, sorters:[{property:'id', direction:'desc'}], autoLoad:true, listeners:{}});
-Ext.define('Admin.store.user.UserGridStroe', {extend:Ext.data.Store, alias:'store.userGridStroe', model:'Admin.model.user.UserModel', storeId:'userGridStroe', proxy:{type:'rest', url:'/user', reader:{type:'json', rootProperty:'content', totalProperty:'totalElements'}, writer:{type:'json'}, simpleSortMode:true}, autoLoad:'true', autoSync:true, pageSize:20, remoteSort:true, sorters:{direction:'DESC', property:'id'}});
+Ext.define('Admin.store.NavigationTree', {extend:Ext.data.TreeStore, storeId:'NavigationTree', fields:[{name:'text'}], root:{expanded:true, children:[{text:'Dashboard', iconCls:'x-fa fa-desktop', rowCls:'nav-tree-badge nav-tree-badge-new', viewType:'admindashboard', routeId:'dashboard', leaf:true}, {text:'流程定义模块', iconCls:'x-fa fa-address-card', viewType:'processDefinitionCenterPanel', leaf:true}, {text:'订单管理模块', iconCls:'x-fa fa-address-card', viewType:'orderCenterPanel', leaf:true}, {text:'请假管理模块', 
+iconCls:'x-fa fa-address-card', viewType:'leaveCenterPanel', leaf:true}, {text:'请假审批模块', iconCls:'x-fa fa-address-card', viewType:'leaveApproveCenterPanel', leaf:true}, {text:'Login', iconCls:'x-fa fa-check', viewType:'login', leaf:true}]}});
+Ext.define('Admin.store.leave.LeaveStroe', {extend:Ext.data.Store, storeId:'leaveStroe', alias:'store.leaveStroe', model:'Admin.model.leave.LeaveModel', proxy:{type:'rest', url:'/leave', reader:{type:'json', rootProperty:'content', totalProperty:'totalElements'}, writer:{type:'json'}, simpleSortMode:true}, autoLoad:true, autoSync:true, remoteSort:true, pageSize:15, sorters:{direction:'DESC', property:'id'}, listeners:{}});
+Ext.define('Admin.store.leaveapprove.LeaveApproveStore', {extend:Ext.data.Store, storeId:'leaveApproveStore', alias:'store.leaveApproveStore', model:'Admin.model.leaveapprove.LeaveApproveModel', proxy:{type:'ajax', url:'leave/tasks', reader:new Ext.data.JsonReader({type:'json', rootProperty:'content', totalProperty:'totalElements'}), simpleSortMode:true}, remoteSort:true, sorters:[{property:'id', direction:'desc'}], autoLoad:true});
+Ext.define('Admin.store.order.OrderGridStroe', {extend:Ext.data.Store, alias:'store.orderGridStroe', fields:[{type:'int', name:'identifier'}, {type:'string', name:'fullname'}, {type:'string', name:'email'}, {name:'subscription'}, {type:'date', name:'joinDate'}, {type:'boolean', name:'isActive'}, {name:'profile_pic'}], data:{'lists':[{'identifier':1, 'fullname':'Archie Young', 'profile_pic':'1.png', 'email':'dwatkins@mydeo.name', 'subscription':'minima', 'joinDate':'10/16/2012', 'isActive':false}, 
+{'identifier':2, 'fullname':'May Williams', 'profile_pic':'2.png', 'email':'jreid@babbleblab.com', 'subscription':'ab', 'joinDate':'6/13/2004', 'isActive':true}]}, proxy:{type:'memory', reader:{type:'json', rootProperty:'lists'}}, autoLoad:'true', sorters:{direction:'ASC', property:'fullname'}});
+Ext.define('Admin.store.process.definition.ProcessDefinitionStroe', {extend:Ext.data.Store, storeId:'processDefinitionStroe', alias:'store.processDefinitionStroe', model:'Admin.model.process.definition.ProcessDefinitionModel', pageSize:15, proxy:{type:'ajax', url:'/process-definition', reader:{type:'json', rootProperty:'content', totalProperty:'totalElements'}, simpleSortMode:true}, remoteSort:true, sorters:[{property:'id', direction:'desc'}], autoLoad:true, listeners:{}});
 Ext.define('Admin.view.dashboard.DashboardController', {extend:Ext.app.ViewController, alias:'controller.dashboard', onRefreshToggle:function(tool, e, owner) {
   var store, runner;
   if (tool.toggleValue) {
@@ -83725,6 +85237,348 @@ isValid:function() {
 }}, {xtype:'button', scale:'large', ui:'soft-blue', formBind:true, reference:'submitButton', bind:false, margin:'5 0', iconAlign:'right', iconCls:'x-fa fa-angle-right', text:'Signup', listeners:{click:'onSignupClick'}}, {xtype:'box', html:'\x3cdiv class\x3d"outer-div"\x3e\x3cdiv class\x3d"seperator"\x3eOR\x3c/div\x3e\x3c/div\x3e'}, {xtype:'button', scale:'large', ui:'facebook', margin:'5 0', iconAlign:'right', iconCls:'x-fa fa-facebook', text:'Login with Facebook', listeners:{click:'onFaceBookLogin'}}, 
 {xtype:'component', html:'\x3cdiv style\x3d"text-align:right"\x3e' + '\x3ca href\x3d"#login" class\x3d"link-forgot-password"\x3e' + 'Back to Log In\x3c/a\x3e' + '\x3c/div\x3e'}]}]});
 Ext.define('Admin.view.dashboard.Dashboard', {extend:Ext.container.Container, xtype:'admindashboard', controller:'dashboard', viewModel:{type:'dashboard'}, layout:'responsivecolumn', listeners:{hide:'onHideView'}, html:'admindashboard'});
+Ext.define('Admin.view.leave.LeaveAddWindow', {extend:Ext.window.Window, alias:'widget.leaveAddWindow', height:350, minHeight:350, minWidth:300, width:500, scrollable:true, title:'Add Leave Window', closable:true, constrain:true, defaultFocus:'textfield', modal:true, layout:'fit', items:[{xtype:'form', layout:'form', padding:'10px', ariaLabel:'Enter your name', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'processStatus', name:'processStatus', 
+value:'NEW', hidden:true, readOnly:true}, {xtype:'textfield', name:'userId', fieldLabel:'请假人', allowBlank:false}, {xtype:'combobox', name:'leaveType', fieldLabel:'请假类型', store:Ext.create('Ext.data.Store', {fields:['value', 'name'], data:[{'value':'A', 'name':'带薪假期'}, {'value':'B', 'name':'无薪假期'}, {'value':'C', 'name':'病假'}]}), queryMode:'local', displayField:'name', valueField:'value', allowBlank:false}, {xtype:'datefield', fieldLabel:'请假开始时间', format:'Y/m/d H:i:s', name:'startTime'}, {xtype:'datefield', 
+fieldLabel:'请假结束时间', format:'Y/m/d H:i:s', name:'endTime'}, {xtype:'textareafield', grow:true, name:'reason', fieldLabel:'请假原因', anchor:'100%'}]}], buttons:['-\x3e', {xtype:'button', text:'Submit', handler:'submitAddForm'}, {xtype:'button', text:'Close', handler:function(btn) {
+  btn.up('window').close();
+}}, '-\x3e']});
+Ext.define('Admin.view.leave.LeaveCenterPanel', {extend:Ext.container.Container, xtype:'leaveCenterPanel', controller:'leaveViewController', viewModel:{type:'leaveViewModel'}, layout:'fit', items:[{xtype:'leaveGridPanel'}]});
+Ext.define('Admin.view.leave.LeaveEditWindow', {extend:Ext.window.Window, alias:'widget.leaveEditWindow', height:350, minHeight:350, minWidth:300, width:500, scrollable:true, title:'Edit Leave Window', closable:true, constrain:true, defaultFocus:'textfield', modal:true, layout:'fit', items:[{xtype:'form', layout:'form', padding:'10px', ariaLabel:'Enter your name', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'processStatus', name:'processStatus', 
+value:'NEW', hidden:true, readOnly:true}, {xtype:'textfield', name:'userId', fieldLabel:'请假人', allowBlank:false}, {xtype:'combobox', name:'leaveType', fieldLabel:'请假类型', store:Ext.create('Ext.data.Store', {fields:['value', 'name'], data:[{'value':'A', 'name':'带薪假期'}, {'value':'B', 'name':'无薪假期'}, {'value':'C', 'name':'病假'}]}), queryMode:'local', displayField:'name', valueField:'value', allowBlank:false}, {xtype:'datefield', fieldLabel:'请假开始时间', format:'Y/m/d H:i:s', name:'startTime'}, {xtype:'datefield', 
+fieldLabel:'请假结束时间', format:'Y/m/d H:i:s', name:'endTime'}, {xtype:'textareafield', grow:true, name:'reason', fieldLabel:'请假原因', anchor:'100%'}]}], buttons:['-\x3e', {xtype:'button', text:'Submit', handler:'submitEditForm'}, {xtype:'button', text:'Close', handler:function(btn) {
+  btn.up('window').close();
+}}, '-\x3e']});
+Ext.define('Admin.view.leave.LeaveGridPanel', {extend:Ext.panel.Panel, xtype:'leaveGridPanel', layout:'fit', items:[{xtype:'gridpanel', title:'LeaveGrid Results', bind:'{leaveLists}', scrollable:false, selModel:{type:'checkboxmodel'}, columns:[{header:'id', dataIndex:'id', width:60, sortable:true, hidden:true}, {header:'processStatus', dataIndex:'processStatus', width:60, sortable:true, renderer:function(val) {
+  if (val == 'NEW') {
+    return '\x3cspan style\x3d"color:green;"\x3e新建\x3c/span\x3e';
+  } else {
+    if (val == 'APPROVAL') {
+      return '\x3cspan style\x3d"color:blue;"\x3e审批中...\x3c/span\x3e';
+    } else {
+      if (val == 'COMPLETE') {
+        return '\x3cspan style\x3d"color:orange;"\x3e完成审批\x3c/span\x3e';
+      } else {
+        return '\x3cspan style\x3d"color:red;"\x3e取消申请\x3c/span\x3e';
+      }
+    }
+  }
+  return val;
+}}, {header:'userId', dataIndex:'userId', width:60, sortable:true}, {header:'startTime', dataIndex:'startTime', width:180, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'endTime', dataIndex:'endTime', width:180, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'leaveType', dataIndex:'leaveType', width:120, sortable:true, renderer:function(val) {
+  if (val == 'A') {
+    return '\x3cspan style\x3d"color:green;"\x3e带薪假期\x3c/span\x3e';
+  } else {
+    if (val == 'B') {
+      return '\x3cspan style\x3d"color:red;"\x3e无薪假期\x3c/span\x3e';
+    } else {
+      if (val == 'C') {
+        return '\x3cspan style\x3d"color:blue;"\x3e病假\x3c/span\x3e';
+      }
+    }
+  }
+  return val;
+}}, {header:'reason', dataIndex:'reason', width:220, sortable:true}, {xtype:'actioncolumn', cls:'content-column', width:120, text:'Actions', tooltip:'edit ', items:[{xtype:'button', iconCls:'x-fa fa-pencil', handler:'openEditWindow'}, {xtype:'button', iconCls:'x-fa fa-close', handler:'deleteOneRow'}, {xtype:'button', iconCls:'x-fa fa-star', tooltip:'发起请假', getClass:function(v, meta, rec) {
+  if (rec.get('processInstanceId') != '') {
+    return 'x-hidden';
+  }
+  return 'x-fa fa-star';
+}, handler:'starLeaveProcess'}, {xtype:'button', iconCls:'x-fa fa-ban', tooltip:'取消请假', getClass:function(v, meta, rec) {
+  if (rec.get('processInstanceId') == '') {
+    return 'x-hidden';
+  }
+  return 'x-fa fa-ban';
+}, handler:'cancelLeaveProcess'}]}], tbar:[{xtype:'combobox', reference:'searchFieldName', hideLabel:true, store:Ext.create('Ext.data.Store', {fields:['name', 'value'], data:[{name:'请假时间', value:'leaveTime'}]}), displayField:'name', valueField:'value', value:'leaveTime', editable:false, queryMode:'local', triggerAction:'all', emptyText:'Select a state...', width:135, listeners:{select:'searchComboboxSelectChuang'}}, '-', {xtype:'datefield', hideLabel:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue', 
+fieldLabel:'From', name:'from_date'}, {xtype:'datefield', hideLabel:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue2', fieldLabel:'To', name:'to_date'}, '-', {text:'Search', iconCls:'fa fa-search', handler:'quickSearch'}, '-', {text:'Search More', iconCls:'fa fa-search-plus', handler:'openSearchWindow'}, '-\x3e', {text:'Add', tooltip:'Add a new row', iconCls:'fa fa-plus', handler:'openAddWindow'}, '-', {text:'Removes', tooltip:'Remove the selected item', iconCls:'fa fa-trash', itemId:'leaveGridPanelRemove', 
+disabled:true, handler:'deleteMoreRows'}], dockedItems:[{xtype:'pagingtoolbar', dock:'bottom', displayInfo:true, bind:'{leaveLists}'}], listeners:{selectionchange:function(selModel, selections) {
+  this.down('#leaveGridPanelRemove').setDisabled(selections.length === 0);
+}}}]});
+Ext.define('Admin.view.leave.LeaveSearchWindow', {extend:Ext.window.Window, alias:'widget.leaveSearchWindow', height:300, minHeight:300, minWidth:300, width:500, scrollable:true, title:'Search More Window', closable:true, constrain:true, defaultFocus:'textfield', modal:true, layout:'fit', items:[{xtype:'form', layout:'form', padding:'10px', ariaLabel:'Enter your name', items:[{xtype:'datefield', format:'Y/m/d H:i:s', fieldLabel:'From', name:'startTime'}, {xtype:'datefield', format:'Y/m/d H:i:s', 
+fieldLabel:'To', name:'endTime'}]}], buttons:['-\x3e', {xtype:'button', text:'Submit', handler:'submitSearchForm'}, {xtype:'button', text:'Close', handler:function(btn) {
+  btn.up('window').close();
+}}, '-\x3e']});
+Ext.define('Admin.view.leave.LeaveViewController', {extend:Ext.app.ViewController, alias:'controller.leaveViewController', openAddWindow:function(toolbar, rowIndex, colIndex) {
+  toolbar.up('panel').up('container').add(Ext.widget('leaveAddWindow')).show();
+}, openEditWindow:function(grid, rowIndex, colIndex) {
+  var record = grid.getStore().getAt(rowIndex);
+  if (record) {
+    if (record.data.processStatus == 'NEW') {
+      var win = grid.up('container').add(Ext.widget('leaveEditWindow'));
+      win.show();
+      win.down('form').getForm().loadRecord(record);
+    } else {
+      Ext.Msg.alert('提示', "只可以修改'新建'状态的信息！");
+    }
+  }
+}, openSearchWindow:function(toolbar, rowIndex, colIndex) {
+  toolbar.up('panel').up('container').add(Ext.widget('leaveSearchWindow')).show();
+}, searchComboboxSelectChuang:function(combo, record, index) {
+}, submitAddForm:function(btn) {
+  var win = btn.up('window');
+  var form = win.down('form');
+  var record = Ext.create('Admin.model.leave.LeaveModel');
+  var values = form.getValues();
+  record.set(values);
+  record.save();
+  Ext.data.StoreManager.lookup('leaveStroe').load();
+  win.close();
+}, submitEditForm:function(btn) {
+  var win = btn.up('window');
+  var store = Ext.data.StoreManager.lookup('leaveStroe');
+  var values = win.down('form').getValues();
+  var record = store.getById(values.id);
+  record.set(values);
+  win.close();
+}, quickSearch:function(btn) {
+  var searchField = this.lookupReference('searchFieldName').getValue();
+  var searchDataFieldValue = this.lookupReference('searchDataFieldValue').getValue();
+  var searchDataFieldValue2 = this.lookupReference('searchDataFieldValue2').getValue();
+  var store = btn.up('gridpanel').getStore();
+  Ext.apply(store.proxy.extraParams, {startTime:'', endTime:''});
+  if (searchField === 'leaveTime') {
+    Ext.apply(store.proxy.extraParams, {startTime:Ext.util.Format.date(searchDataFieldValue, 'Y/m/d H:i:s'), endTime:Ext.util.Format.date(searchDataFieldValue2, 'Y/m/d H:i:s')});
+  }
+  store.load({params:{start:0, limit:20, page:1}});
+}, submitSearchForm:function(btn) {
+  var store = Ext.data.StoreManager.lookup('leaveStroe');
+  var win = btn.up('window');
+  var form = win.down('form');
+  var values = form.getValues();
+  Ext.apply(store.proxy.extraParams, {startTime:'', endTime:''});
+  Ext.apply(store.proxy.extraParams, {startTime:Ext.util.Format.date(values.startTime, 'Y/m/d H:i:s'), endTime:Ext.util.Format.date(values.endTime, 'Y/m/d H:i:s')});
+  store.load({params:{start:0, limit:20, page:1}});
+  win.close();
+}, deleteOneRow:function(grid, rowIndex, colIndex) {
+  var store = grid.getStore();
+  var record = store.getAt(rowIndex);
+  if (record.data.processStatus == 'NEW') {
+    Ext.MessageBox.confirm('提示', '确定要进行删除操作吗？数据将无法还原！', function(btn, text) {
+      if (btn == 'yes') {
+        store.remove(record);
+      }
+    }, this);
+  } else {
+    Ext.Msg.alert('提示', "只可以删除'新建'状态的信息！");
+  }
+}, deleteMoreRows:function(btn, rowIndex, colIndex) {
+  var grid = btn.up('gridpanel');
+  var selModel = grid.getSelectionModel();
+  if (selModel.hasSelection()) {
+    Ext.Msg.confirm('警告', '确定要删除吗？', function(button) {
+      if (button == 'yes') {
+        var rows = selModel.getSelection();
+        var selectIds = [];
+        Ext.each(rows, function(row) {
+          if (row.data.processStatus == 'NEW') {
+            selectIds.push(row.data.id);
+          }
+        });
+        Ext.Ajax.request({url:'/leave/deletes', method:'post', params:{ids:selectIds}, success:function(response, options) {
+          var json = Ext.util.JSON.decode(response.responseText);
+          if (json.success) {
+            Ext.Msg.alert('操作成功', json.msg, function() {
+              grid.getStore().reload();
+            });
+          } else {
+            Ext.Msg.alert('操作失败', json.msg);
+          }
+        }});
+      }
+    });
+  } else {
+    Ext.Msg.alert('错误', '没有任何行被选中，无法进行删除操作！');
+  }
+}, starLeaveProcess:function(grid, rowIndex, colIndex) {
+  var record = grid.getStore().getAt(rowIndex);
+  Ext.Ajax.request({url:'/leave/start', method:'post', params:{id:record.get('id')}, success:function(response, options) {
+    var json = Ext.util.JSON.decode(response.responseText);
+    if (json.success) {
+      Ext.Msg.alert('操作成功', json.msg, function() {
+        grid.getStore().reload();
+      });
+    } else {
+      Ext.Msg.alert('操作失败', json.msg);
+    }
+  }});
+}, cancelLeaveProcess:function(grid, rowIndex, colIndex) {
+  Ext.Msg.alert('Title', 'Cancel Leave Process');
+}});
+Ext.define('Admin.view.leave.LeaveViewModel', {extend:Ext.app.ViewModel, alias:'viewmodel.leaveViewModel', stores:{leaveLists:{type:'leaveStroe'}}});
+Ext.define('Admin.view.leaveapprove.LeaveApproveCenterPanel', {extend:Ext.panel.Panel, xtype:'leaveApproveCenterPanel', layout:'fit', margin:'20 20 20 20', controller:'leaveApproveViewController', viewModel:{type:'leaveApproveViewModel'}, items:[{xtype:'leaveApproveGrid'}]});
+Ext.define('Admin.view.leaveapprove.LeaveApproveGrid', {extend:Ext.grid.Panel, xtype:'leaveApproveGrid', title:'tiele', iconCls:'fa-arrow-circle-o-up', bind:'{leaveApproveStore}', columns:[{xtype:'actioncolumn', items:[{xtype:'button', iconCls:'x-fa fa-pencil', tooltip:'签收任务', getClass:function(v, meta, rec) {
+  if (rec.get('assignee') != '') {
+    return 'x-hidden';
+  }
+  return 'x-fa fa-pencil';
+}, handler:'onClickLeaveApproveClaimButton'}, {xtype:'button', iconCls:'x-fa fa-edit', tooltip:'审批任务', getClass:function(v, meta, rec) {
+  if (rec.get('assignee') == '') {
+    return 'x-hidden';
+  }
+  return 'x-fa fa-edit';
+}, handler:'onClickLeaveApproveCompleteWindowButton'}, {xtype:'button', iconCls:'x-fa fa-object-group', tooltip:'任务跟踪', handler:'onClickGraphTraceButton'}], cls:'content-column', width:120, dataIndex:'bool', text:'Actions', tooltip:'edit '}, {header:'id', dataIndex:'id', width:60, sortable:true, hidden:true}, {header:'processStatus', dataIndex:'processStatus', width:60, sortable:true, renderer:function(val) {
+  if (val == 'NEW') {
+    return '\x3cspan style\x3d"color:green;"\x3e新建\x3c/span\x3e';
+  } else {
+    if (val == 'APPROVAL') {
+      return '\x3cspan style\x3d"color:blue;"\x3e审批中...\x3c/span\x3e';
+    } else {
+      if (val == 'COMPLETE') {
+        return '\x3cspan style\x3d"color:orange;"\x3e完成审批\x3c/span\x3e';
+      } else {
+        return '\x3cspan style\x3d"color:red;"\x3e取消申请\x3c/span\x3e';
+      }
+    }
+  }
+  return val;
+}}, {header:'userId', dataIndex:'userId', width:60, sortable:true}, {header:'startTime', dataIndex:'startTime', width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'endTime', dataIndex:'endTime', width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'realityStartTime', dataIndex:'realityStartTime', width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'realityEndTime', dataIndex:'realityEndTime', 
+width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'applyTime', dataIndex:'applyTime', width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'leaveType', dataIndex:'leaveType', width:80, sortable:true, renderer:function(val) {
+  if (val == 'A') {
+    return '\x3cspan style\x3d"color:green;"\x3e带薪假期\x3c/span\x3e';
+  } else {
+    if (val == 'B') {
+      return '\x3cspan style\x3d"color:red;"\x3e无薪假期\x3c/span\x3e';
+    } else {
+      if (val == 'C') {
+        return '\x3cspan style\x3d"color:blue;"\x3e病假\x3c/span\x3e';
+      }
+    }
+  }
+  return val;
+}}, {header:'reason', dataIndex:'reason', width:80, sortable:true}, {header:'processInstanceId', dataIndex:'processInstanceId', width:80, sortable:true}, {header:'taskId', dataIndex:'taskId', width:80, sortable:true}, {header:'taskName', dataIndex:'taskName', width:80, sortable:true}, {header:'taskCreateTime', dataIndex:'taskCreateTime', width:150, sortable:true, renderer:Ext.util.Format.dateRenderer('Y/m/d H:i:s')}, {header:'assignee', dataIndex:'assignee', width:80, sortable:true}, {header:'taskDefinitionKey', 
+dataIndex:'taskDefinitionKey', width:80, sortable:true}, {header:'processDefinitionId', dataIndex:'processDefinitionId', width:80, sortable:true}, {header:'suspended', dataIndex:'suspended', width:80, sortable:true}, {header:'version', dataIndex:'version', width:60, sortable:true}], dockedItems:[{xtype:'pagingtoolbar', dock:'bottom', bind:'{leaveApproveStore}', displayInfo:true, items:['-', {text:'Add', iconCls:'x-fa fa-plus', listeners:{click:'onClickLeaveApproveGridAddButton'}}, '-', {text:'Update', 
+iconCls:'x-fa fa-pencil', listeners:{click:'onClickLeaveApproveGridUpdateButton'}}, '-', {text:'Delete', iconCls:'x-fa fa-close', listeners:{click:'onClickLeaveApproveGridDeleteButton'}}]}]});
+Ext.define('Admin.view.leaveapprove.LeaveApproveViewController', {extend:Ext.app.ViewController, alias:'controller.leaveApproveViewController', onClickLeaveApproveClaimButton:function(view, recIndex, cellIndex, item, e, record) {
+  Ext.Ajax.request({url:'leave/claim/' + record.get('taskId'), method:'post', success:function(response, options) {
+    var json = Ext.util.JSON.decode(response.responseText);
+    if (json.success) {
+      Ext.Msg.alert('操作成功', json.msg, function() {
+        view.getStore().reload();
+      });
+    } else {
+      Ext.Msg.alert('操作失败', json.msg);
+    }
+  }});
+}, setCurrentView:function(view, form, title) {
+  var cfg = Ext.apply({xtype:'leaveApproveWindow', items:[{xtype:form}]}, {title:title});
+  var win = Ext.widget(cfg);
+  view.up('panel').up('container').add(win);
+  return win;
+}, onClickLeaveApproveCompleteWindowButton:function(view, recIndex, cellIndex, item, e, record) {
+  var taskDefinitionKey = record.get('taskDefinitionKey');
+  if (taskDefinitionKey == 'deptLeaderAudit') {
+    var win = this.setCurrentView(view, taskDefinitionKey, '部门领导审批');
+    win.down('form').getForm().loadRecord(record);
+  } else {
+    if (taskDefinitionKey == 'hrAudit') {
+      var win = this.setCurrentView(view, taskDefinitionKey, '人事审批表单');
+      win.down('form').getForm().loadRecord(record);
+    } else {
+      if (taskDefinitionKey == 'reportBack') {
+        var win = this.setCurrentView(view, taskDefinitionKey, '销假表单');
+        win.down('form').getForm().loadRecord(record);
+      } else {
+        if (taskDefinitionKey == 'modifyApply') {
+          var win = this.setCurrentView(view, taskDefinitionKey, '调整申请表单');
+          win.down('form').getForm().loadRecord(record);
+        }
+      }
+    }
+  }
+}, complete:function(url, variables, form) {
+  var keys = '', values = '', types = '';
+  if (variables) {
+    Ext.each(variables, function(item) {
+      if (keys != '') {
+        keys += ',';
+        values += ',';
+        types += ',';
+      }
+      keys += item.key;
+      values += item.value;
+      types += item.type;
+    });
+  }
+  Ext.Ajax.request({url:url, method:'post', params:{keys:keys, values:values, types:types}, success:function(response, options) {
+    var json = Ext.util.JSON.decode(response.responseText);
+    if (json.success) {
+      Ext.Msg.alert('操作成功', json.msg, function() {
+        form.up('window').close();
+        Ext.data.StoreManager.lookup('leaveApproveStore').load();
+      });
+    } else {
+      Ext.Msg.alert('操作失败', json.msg);
+    }
+  }});
+}, onClickDeptleaderAuditFormSubmitButton:function(btn) {
+  var form = btn.up('form');
+  var values = form.getValues();
+  var url = 'leave/complete/' + values.taskId;
+  var variables = [{key:'deptLeaderPass', value:values.deptLeaderPass, type:'B'}, {key:'deptLeaderBackReason', value:values.deptLeaderBackReason, type:'S'}];
+  this.complete(url, variables, form);
+}, onClickHrAuditFormSubmitButton:function(btn) {
+  var form = btn.up('form');
+  var values = form.getValues();
+  var url = 'leave/complete/' + values.taskId;
+  var variables = [{key:'hrPass', value:values.hrPass, type:'B'}, {key:'hrBackReason', value:values.hrBackReason, type:'S'}];
+  this.complete(url, variables, form);
+}, onClickReportBackFormSubmitButton:function(btn) {
+  var form = btn.up('form');
+  var values = form.getValues();
+  var url = 'leave/complete/' + values.taskId;
+  var variables = [{key:'realityStartTime', value:values.realityStartTime, type:'D'}, {key:'realityEndTime', value:values.realityEndTime, type:'D'}];
+  this.complete(url, variables, form);
+}, onClickModifyApplyFormSubmitButton:function(btn) {
+  var form = btn.up('form');
+  var values = form.getValues();
+  var url = 'leave/complete/' + values.taskId;
+  var variables = [{key:'reApply', value:values.reApply, type:'B'}, {key:'leaveType', value:values.leaveType, type:'S'}, {key:'startTime', value:values.startTime, type:'D'}, {key:'endTime', value:values.endTime, type:'D'}, {key:'reason', value:values.reason, type:'S'}];
+  this.complete(url, variables, form);
+}, onClickGraphTraceButton:function(btn) {
+  alert('on Click Add Button!');
+}});
+Ext.define('Admin.view.leaveapprove.LeaveApproveViewModel', {extend:Ext.app.ViewModel, alias:'viewmodel.leaveApproveViewModel', stores:{leaveApproveStore:{type:'leaveApproveStore'}}});
+Ext.define('Admin.view.leaveapprove.LeaveApproveWindow', {extend:Ext.window.Window, alias:'widget.leaveApproveWindow', autoShow:true, modal:true, layout:'fit', width:500, height:600, afterRender:function() {
+  var me = this;
+  me.callParent(arguments);
+  me.syncSize();
+  Ext.on(me.resizeListeners = {resize:me.onViewportResize, scope:me, buffer:50});
+}, doDestroy:function() {
+  Ext.un(this.resizeListeners);
+  this.callParent();
+}, onViewportResize:function() {
+  this.syncSize();
+}, syncSize:function() {
+  var width = Ext.Element.getViewportWidth(), height = Ext.Element.getViewportHeight();
+  this.setSize(Math.floor(width * 0.4), Math.floor(height * 0.4));
+  this.setXY([Math.floor(width * 0.05), Math.floor(height * 0.05)]);
+}});
+Ext.define('Admin.view.leaveapprove.task.DeptLeaderAudit', {extend:Ext.form.Panel, alias:'widget.deptLeaderAudit', bodyPadding:10, bodyBorder:true, defaults:{anchor:'100%'}, fieldDefaults:{labelAlign:'left', msgTarget:'none', invalidCls:''}, items:[{xtype:'textfield', name:'taskId', fieldLabel:'任务ID', hidden:true, readOnly:true}, {xtype:'radiogroup', fieldLabel:'部门经理审批', defaults:{flex:1}, items:[{name:'deptLeaderPass', inputValue:true, boxLabel:'同意', checked:true}, {name:'deptLeaderPass', inputValue:false, 
+boxLabel:'不同意'}]}, {xtype:'textareafield', grow:true, name:'deptLeaderBackReason', fieldLabel:'驳回理由', anchor:'100%'}], bbar:[{xtype:'button', ui:'soft-green', text:'提交', handler:'onClickDeptleaderAuditFormSubmitButton'}, {xtype:'button', ui:'gray', text:'取消', handler:function(btn) {
+  var win = btn.up('window');
+  if (win) {
+    win.close();
+  }
+}}]});
+Ext.define('Admin.view.leaveapprove.task.HrAudit', {extend:Ext.form.Panel, alias:'widget.hrAudit', bodyPadding:10, bodyBorder:true, defaults:{anchor:'100%'}, fieldDefaults:{labelAlign:'left', msgTarget:'none', invalidCls:''}, items:[{xtype:'textfield', name:'taskId', fieldLabel:'任务ID', hidden:true, readOnly:true}, {xtype:'radiogroup', fieldLabel:'人事文员审批', defaults:{flex:1}, items:[{name:'hrPass', inputValue:true, boxLabel:'同意', checked:true}, {name:'hrPass', inputValue:false, boxLabel:'不同意'}]}, {xtype:'textareafield', 
+grow:true, name:'hrBackReason', fieldLabel:'驳回理由', anchor:'100%'}], bbar:[{xtype:'button', ui:'soft-green', text:'提交', handler:'onClickHrAuditFormSubmitButton'}, {xtype:'button', ui:'gray', text:'取消', handler:function(btn) {
+  var win = btn.up('window');
+  if (win) {
+    win.close();
+  }
+}}]});
+Ext.define('Admin.view.leaveapprove.task.ModifyApply', {extend:Ext.form.Panel, alias:'widget.modifyApply', bodyPadding:5, bodyBorder:true, defaults:{anchor:'100%'}, fieldDefaults:{labelAlign:'left', msgTarget:'none', invalidCls:''}, items:[{xtype:'radiogroup', fieldLabel:'重新申请', items:[{name:'reApply', inputValue:true, boxLabel:'是', checked:true}, {name:'reApply', inputValue:false, boxLabel:'否'}]}, {xtype:'textfield', name:'taskId', fieldLabel:'任务ID', hidden:true, readOnly:true}, {xtype:'combobox', 
+name:'leaveType', fieldLabel:'请假类型', store:Ext.create('Ext.data.Store', {fields:['value', 'name'], data:[{'value':'A', 'name':'带薪假期'}, {'value':'B', 'name':'无薪假期'}, {'value':'C', 'name':'病假'}]}), queryMode:'local', displayField:'name', valueField:'value', allowBlank:false}, {xtype:'datefield', fieldLabel:'请假开始时间', format:'Y/m/d H:i:s', name:'startTime'}, {xtype:'datefield', fieldLabel:'请假结束时间', format:'Y/m/d H:i:s', name:'endTime'}, {xtype:'textareafield', grow:true, name:'reason', fieldLabel:'请假原因', 
+anchor:'100%'}], bbar:[{xtype:'button', ui:'soft-green', text:'提交', handler:'onClickModifyApplyFormSubmitButton'}, {xtype:'button', ui:'gray', text:'取消', handler:function(btn) {
+  var win = btn.up('window');
+  if (win) {
+    win.close();
+  }
+}}]});
+Ext.define('Admin.view.leaveapprove.task.ReportBack', {extend:Ext.form.Panel, alias:'widget.reportBack', bodyPadding:10, bodyBorder:true, defaults:{anchor:'100%'}, fieldDefaults:{labelAlign:'left', msgTarget:'none', invalidCls:''}, items:[{xtype:'textfield', name:'taskId', fieldLabel:'任务ID', hidden:true, readOnly:true}, {xtype:'datefield', fieldLabel:'实际开始时间', format:'Y/m/d H:i:s', name:'realityStartTime'}, {xtype:'datefield', fieldLabel:'实际结束时间', format:'Y/m/d H:i:s', name:'realityEndTime'}], bbar:[{xtype:'button', 
+ui:'soft-green', text:'提交', handler:'onClickReportBackFormSubmitButton'}, {xtype:'button', ui:'gray', text:'取消', handler:function(btn) {
+  var win = btn.up('window');
+  if (win) {
+    win.close();
+  }
+}}]});
 Ext.define('Admin.view.main.MainContainerWrap', {extend:Ext.container.Container, xtype:'maincontainerwrap', scrollable:'y', layout:{type:'hbox', align:'stretchmax', animate:true, animatePolicy:{x:true, width:true}}, beforeLayout:function() {
   var me = this, height = Ext.Element.getViewportHeight() - 64, navTree = me.getComponent('navigationTreeList');
   me.minHeight = height;
@@ -83733,7 +85587,7 @@ Ext.define('Admin.view.main.MainContainerWrap', {extend:Ext.container.Container,
 }});
 Ext.define('Admin.view.main.MainController', {extend:Ext.app.ViewController, alias:'controller.main', listen:{controller:{'#':{unmatchedroute:'onRouteChange'}}}, routes:{':node':'onRouteChange'}, lastView:null, setCurrentView:function(hashTag) {
   hashTag = (hashTag || '').toLowerCase();
-  var me = this, refs = me.getReferences(), mainCard = refs.mainCardPanel, mainLayout = mainCard.getLayout(), navigationList = refs.navigationTreeList, store = navigationList.getStore(), node = store.findNode('routeId', hashTag) || store.findNode('viewType', hashTag), view = node && node.get('viewType'), lastView = me.lastView, existingItem = mainCard.child('component[routeId\x3d' + hashTag + ']'), newView;
+  var me = this, refs = me.getReferences(), mainCard = refs.mainCardPanel, mainLayout = mainCard.getLayout(), navigationList = refs.navigationTreeList, store = navigationList.getStore(), node = store.findNode('routeId', hashTag) || store.findNode('viewType', hashTag), view = node && node.get('viewType') || 'page404', lastView = me.lastView, existingItem = mainCard.child('component[routeId\x3d' + hashTag + ']'), newView;
   if (lastView && lastView.isWindow) {
     lastView.destroy();
   }
@@ -83794,6 +85648,8 @@ Ext.define('Admin.view.main.MainController', {extend:Ext.app.ViewController, ali
   if (!window.location.hash) {
     this.redirectTo('login');
   }
+}, onRouteChange:function(id) {
+  this.setCurrentView(id);
 }, logoutButton:function() {
   var me = this;
   Ext.Ajax.request({url:'logout', method:'post', success:function(response, options) {
@@ -83805,206 +85661,30 @@ Ext.define('Admin.view.main.MainController', {extend:Ext.app.ViewController, ali
       Ext.Msg.alert('登出失败', json.msg);
     }
   }});
-}, onRouteChange:function(id) {
-  this.setCurrentView(id);
 }});
 Ext.define('Admin.view.main.MainModel', {extend:Ext.app.ViewModel, alias:'viewmodel.main', data:{currentView:null}});
-Ext.define('Admin.view.order.Order', {extend:Ext.container.Container, xtype:'order', controller:'orderViewController', viewModel:{type:'orderViewModel'}, layout:'fit', items:[{xtype:'orderPanel'}]});
-Ext.define('Admin.view.order.OrderAddWindow', {extend:Ext.window.Window, alias:'widget.orderAddWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'添加订单信息', items:[{xtype:'form', layout:'form', bodyPadding:20, scrollable:true, items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'Order Number', name:'orderNumber'}, {xtype:'datefield', fieldLabel:'Create Time', name:'createTime', format:'Y/m/d H:i:s'}], buttons:[{xtype:'button', 
-text:'Submit', handler:'submitAddForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}]}]});
-Ext.define('Admin.view.order.OrderAddWindow2', {extend:Ext.window.Window, alias:'widget.orderAddWindow2', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'添加订单信息', items:[{xtype:'form', layout:'form', bodyPadding:20, scrollable:true, items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'Order Number', name:'orderNumber'}, {xtype:'datefield', fieldLabel:'Create Time', name:'createTime', format:'Y/m/d H:i:s'}], buttons:[{xtype:'button', 
-text:'Submit', handler:'submitAddForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}]}]});
-Ext.define('Admin.view.order.OrderEditWindow', {extend:Ext.window.Window, alias:'widget.orderEditWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'修改订单信息', items:[{xtype:'form', layout:'form', bodyPadding:20, ariaLabel:'Enter your name', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'Order Number', name:'orderNumber'}, {xtype:'datefield', fieldLabel:'Create Time', name:'createTime', format:'Y/m/d H:i:s'}], 
-buttons:['-\x3e', {xtype:'button', text:'Submit', handler:'submitEditForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}, '-\x3e']}]});
-Ext.define('Admin.view.order.OrderPanel', {extend:Ext.panel.Panel, xtype:'orderPanel', layout:'fit', items:[{xtype:'gridpanel', cls:'user-grid', title:'OrderGrid Results', bind:'{orderLists}', scrollable:false, selModel:{type:'checkboxmodel', checkOnly:true}, columns:[{xtype:'gridcolumn', width:40, dataIndex:'id', text:'#', hidden:true}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'orderNumber', text:'Order Number', flex:1}, {xtype:'datecolumn', cls:'content-column', width:200, dataIndex:'createTime', 
-text:'Create Time', formatter:'date("Y/m/d H:i:s")', flex:1}, {xtype:'actioncolumn', cls:'content-column', width:120, text:'Actions', tooltip:'edit ', items:[{xtype:'button', iconCls:'x-fa fa-pencil', handler:'openEditWindow'}, {xtype:'button', iconCls:'x-fa fa-close', handler:'deleteOneRow'}, {xtype:'button', iconCls:'x-fa fa-ban', handler:'onDisableButton'}]}], listeners:{selectionchange:function(selModel, selections) {
-  this.down('#orderGridPanelRemove').setDisabled(selections.length === 0);
-}}, tbar:[{xtype:'combobox', hideLabel:true, reference:'searchFieldName', store:Ext.create('Ext.data.Store', {fields:['name', 'value'], data:[{name:'订单编号', value:'orderNumber'}, {name:'创建时间', value:'createTime'}]}), displayField:'name', valueField:'value', value:'orderNumber', editable:false, queryMode:'local', triggerAction:'all', emptyText:'Select a state...', width:135, listeners:{select:'searchComboboxSelectChuang'}}, '-', {xtype:'textfield', reference:'searchFieldValue', name:'orderPanelSearchField'}, 
-'-', {xtype:'datefield', hideLabel:true, hidden:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue', fieldLabel:'From', name:'from_date'}, '-', {xtype:'datefield', hideLabel:true, hidden:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue2', fieldLabel:'To', name:'to_date'}, '-', {text:'Search', iconCls:'fa fa-search', handler:'quickSearch'}, '-', {text:'Search More', iconCls:'fa fa-search-plus', handler:'openSearchWindow'}, '-\x3e', {text:'Add', tooltip:'Add a new row', iconCls:'fa fa-plus', 
-handler:'openAddWindow'}, '-', {text:'Removes', itemId:'orderGridPanelRemove', tooltip:'Remove the selected item', iconCls:'fa fa-trash', disabled:true, handler:'deleteMoreRows'}], dockedItems:[{xtype:'pagingtoolbar', dock:'bottom', displayInfo:true, bind:'{orderLists}'}]}]});
-Ext.define('Admin.view.order.OrderSearchWindow', {extend:Ext.window.Window, alias:'widget.orderSearchWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'查询订单信息', items:[{xtype:'form', layout:'form', bodyPadding:20, scrollable:true, defaults:{labelWidth:100}, defaultType:'textfield', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'Order Number', name:'orderNumber'}, {xtype:'datefield', format:'Y/m/d H:i:s', 
-fieldLabel:'From', name:'createTimeStart'}, {xtype:'datefield', format:'Y/m/d H:i:s', fieldLabel:'To', name:'createTimeEnd'}], buttons:[{xtype:'button', text:'Submit', handler:'submitSearchForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}]}]});
-Ext.define('Admin.view.order.OrderViewController', {extend:Ext.app.ViewController, alias:'controller.orderViewController', openAddWindow:function(grid, rowIndex, colIndex) {
-  grid.up('container').add(Ext.widget('orderAddWindow')).show();
-}, openEditWindow:function(grid, rowIndex, colIndex) {
-  var record = grid.getStore().getAt(rowIndex);
-  if (record) {
-    var win = grid.up('container').add(Ext.widget('orderEditWindow'));
-    win.show();
-    win.down('form').getForm().loadRecord(record);
-  }
-}, openSearchWindow:function(toolbar, rowIndex, colIndex) {
-  toolbar.up('grid').up('container').add(Ext.widget('orderSearchWindow')).show();
-}, submitAddForm:function(btn) {
-  var win = btn.up('window');
-  var form = win.down('form');
-  var record = Ext.create('Admin.model.order.OrderModel');
-  var values = form.getValues();
-  console.log(values);
-  record.set(values);
-  record.save();
-  Ext.data.StoreManager.lookup('orderGridStroe').load();
-  win.close();
-}, submitEditForm:function(btn) {
-  var win = btn.up('window');
-  var store = Ext.data.StoreManager.lookup('orderGridStroe');
-  var values = win.down('form').getValues();
-  var record = store.getById(values.id);
-  record.set(values);
-  win.close();
-}, searchComboboxSelectChuang:function(combo, record, index) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  if (searchField === 'createTime') {
-    this.lookupReference('searchFieldValue').hide();
-    this.lookupReference('searchDataFieldValue').show();
-    this.lookupReference('searchDataFieldValue2').show();
-  } else {
-    this.lookupReference('searchFieldValue').show();
-    this.lookupReference('searchDataFieldValue').hide();
-    this.lookupReference('searchDataFieldValue2').hide();
-  }
-}, quickSearch:function(btn) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  var searchValue = this.lookupReference('searchFieldValue').getValue();
-  var searchDataFieldValue = this.lookupReference('searchDataFieldValue').getValue();
-  var searchDataFieldValue2 = this.lookupReference('searchDataFieldValue2').getValue();
-  var store = btn.up('gridpanel').getStore();
-  Ext.apply(store.proxy.extraParams, {orderNumber:'', createTimeStart:'', createTimeEnd:''});
-  if (searchField === 'orderNumber') {
-    Ext.apply(store.proxy.extraParams, {orderNumber:searchValue});
-  }
-  if (searchField === 'createTime') {
-    Ext.apply(store.proxy.extraParams, {createTimeStart:Ext.util.Format.date(searchDataFieldValue, 'Y/m/d H:i:s'), createTimeEnd:Ext.util.Format.date(searchDataFieldValue2, 'Y/m/d H:i:s')});
-  }
-  store.load({params:{start:0, limit:20, page:1}});
-}, submitSearchForm:function(btn) {
-  var store = Ext.data.StoreManager.lookup('orderGridStroe');
-  var win = btn.up('window');
-  var form = win.down('form');
-  var values = form.getValues();
-  Ext.apply(store.proxy.extraParams, {orderNumber:'', createTimeStart:'', createTimeEnd:''});
-  Ext.apply(store.proxy.extraParams, {orderNumber:values.orderNumber, createTimeStart:Ext.util.Format.date(values.createTimeStart, 'Y/m/d H:i:s'), createTimeEnd:Ext.util.Format.date(values.createTimeEnd, 'Y/m/d H:i:s')});
-  store.load({params:{start:0, limit:20, page:1}});
-  win.close();
-}, deleteOneRow:function(grid, rowIndex, colIndex) {
-  Ext.MessageBox.confirm('提示', '确定要进行删除操作吗？数据将无法还原！', function(btn, text) {
-    if (btn == 'yes') {
-      var store = grid.getStore();
-      var record = store.getAt(rowIndex);
-      store.remove(record);
-      Ext.data.StoreManager.lookup('orderGridStroe').load();
-    }
-  }, this);
-}, deleteMoreRows:function(grid, rowIndex, colIndex) {
-  var grid = btn.up('gridpanel');
-  var selModel = grid.getSelectionModel();
-  if (selModel.hasSelection()) {
-    Ext.Msg.confirm('警告', '确定要删除吗？', function(button) {
-      if (button == 'yes') {
-        var rows = selModel.getSelection();
-        var selectIds = [];
-        Ext.each(rows, function(row) {
-          selectIds.push(row.data.id);
-        });
-        Ext.Ajax.request({url:'/order/deletes', method:'post', params:{ids:selectIds}, success:function(response, options) {
-          var json = Ext.util.JSON.decode(response.responseText);
-          if (json.success) {
-            Ext.Msg.alert('操作成功', json.msg, function() {
-              grid.getStore().reload();
-            });
-          } else {
-            Ext.Msg.alert('操作失败', json.msg);
-          }
-        }});
-      }
-    });
-  } else {
-    Ext.Msg.alert('错误', '没有任何行被选中，无法进行删除操作！');
-  }
-}, onDisableButton:function(grid, rowIndex, colIndex) {
-  Ext.Msg.alert('Title', 'Click Disable Button');
-}});
-Ext.define('Admin.view.order.OrderViewController2', {extend:Ext.app.ViewController, alias:'controller.orderViewController2', searchComboboxSelectChuang:function(combo, record, index) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  if (searchField === 'createTime') {
-    this.lookupReference('searchFieldValue').hide();
-    this.lookupReference('searchDataFieldValue').show();
-  } else {
-    this.lookupReference('searchFieldValue').show();
-    this.lookupReference('searchDataFieldValue').hide();
-  }
-}, openAddWindow:function(grid, rowIndex, colIndex) {
-  grid.up('container').add(Ext.widget('orderAddWindow')).show();
-}, submitAddForm:function(btn) {
-  var form = btn.up('window').down('form');
-}, openEditWindow:function(grid, rowIndex, colIndex) {
-  var record = grid.getStore().getAt(rowIndex);
-  if (record) {
-    var win = grid.up('container').add(Ext.widget('orderEditWindow'));
-    win.show();
-    win.down('form').getForm().loadRecord(record);
-  }
-}, submitEditForm:function(btn) {
-  var form = btn.up('window').down('form');
-  console.log(form.getValues());
-  console.log(form.getValues('id'));
-}, quickSearch:function(btn) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  var searchValue = this.lookupReference('searchFieldValue').getValue();
-  var store = btn.up('gridpanel').getStore();
-  Ext.apply(store.proxy.extraParams, {orderNumber:'', createTime:''});
-  if (searchField === 'orderNumber') {
-    Ext.apply(store.proxy.extraParams, {orderNumber:searchValue});
-  }
-  if (searchField === 'createTime') {
-    Ext.apply(store.proxy.extraParams, {createTime:searchValue});
-  }
-  store.load({params:{start:0, limit:20, page:1}});
-}, openSearchWindow:function(toolbar, rowIndex, colIndex) {
-  toolbar.up('grid').up('container').add(Ext.widget('orderSearchWindow')).show();
-}, submitSearchForm:function(btn) {
-  var form = btn.up('window').down('form');
-}, deleteOneRow:function(grid, rowIndex, colIndex) {
-  Ext.Msg.alert('Delete One Row', 'Click Delete Button');
-}, deleteMoreRows:function(grid, rowIndex, colIndex) {
-  var task;
-  task = {run:function() {
-    Ext.data.StoreManager.lookup('orderGridStroe').load();
-    console.log('时间定时器启动了');
-  }, interval:2000};
-  Ext.MessageBox.confirm('', '确定要删除所选信息吗？', function(choice) {
-    if (choice == 'yes') {
-      var grid = btn.up('grid');
-      var selecteds = grid.getSelectionModel().getSelection();
-      var store = grid.getStore();
-      console.log(delRow);
-      store.remove(delRow);
-      setTimeout(function() {
-        Ext.data.StoreManager.lookup('orderGridStroe').load();
-        console.log('时间定时器启动了');
-      }, 1000);
-    }
-  });
+Ext.define('Admin.view.order.OrderCenterPanel', {extend:Ext.container.Container, xtype:'orderCenterPanel', controller:'orderViewController', viewModel:{type:'orderViewModel'}, layout:'fit', items:[{xtype:'orderGridPanel'}]});
+Ext.define('Admin.view.order.OrderGridPanel', {extend:Ext.panel.Panel, xtype:'orderGridPanel', layout:'fit', items:[{xtype:'gridpanel', cls:'user-grid', title:'OrderGrid Results', bind:'{orderLists}', scrollable:false, columns:[{xtype:'gridcolumn', width:40, dataIndex:'identifier', text:'#'}, {xtype:'gridcolumn', width:75, dataIndex:'profile_pic', text:'User', renderer:function(value) {
+  return "\x3cimg src\x3d'resources/images/user-profile/" + value + "' alt\x3d'Profile Pic' height\x3d'40px' width\x3d'40px'\x3e";
+}}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'fullname', text:'Name', flex:1}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'email', text:'Email', flex:1}, {xtype:'datecolumn', cls:'content-column', width:120, dataIndex:'joinDate', text:'Date'}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'subscription', text:'Subscription', flex:1}, {xtype:'actioncolumn', cls:'content-column', width:120, dataIndex:'bool', text:'Actions', tooltip:'edit ', items:[{xtype:'button', iconCls:'x-fa fa-pencil', 
+handler:'onEditButton'}, {xtype:'button', iconCls:'x-fa fa-close', handler:'onDeleteButton'}, {xtype:'button', iconCls:'x-fa fa-ban', handler:'onDisableButton'}]}], dockedItems:[{xtype:'pagingtoolbar', dock:'bottom', itemId:'userPaginationToolbar', displayInfo:true, bind:'{orderLists}'}]}]});
+Ext.define('Admin.view.order.OrderViewController', {extend:Ext.app.ViewController, alias:'controller.orderViewController', onEditButton:function(grid, rowIndex, colIndex) {
+  var rec = grid.getStore().getAt(rowIndex);
+  Ext.Msg.alert('Title', rec.get('fullname'));
+}, onDeleteButton:function(grid, rowIndex, colIndex) {
+  Ext.Msg.alert('Title', 'Click Delete Button');
 }, onDisableButton:function(grid, rowIndex, colIndex) {
   Ext.Msg.alert('Title', 'Click Disable Button');
 }});
 Ext.define('Admin.view.order.OrderViewModel', {extend:Ext.app.ViewModel, alias:'viewmodel.orderViewModel', stores:{orderLists:{type:'orderGridStroe'}}});
 Ext.define('Admin.view.process.definition.ProcessDefinitionCenterPanel', {extend:Ext.container.Container, xtype:'processDefinitionCenterPanel', controller:'processDefinitionViewController', viewModel:{type:'processDefinitionViewModel'}, layout:'fit', items:[{xtype:'processDefinitionGridPanel'}]});
-Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {extend:Ext.panel.Panel, xtype:'processDefinitionGridPanel', layout:'fit', items:[{xtype:'gridpanel', cls:'process-definition-grid', title:'流程定义列表', bind:'{processDefinitionLists}', scrollable:false, columns:[{header:'流程定义实体Id', dataIndex:'id', width:120, sortable:true, flex:1}, {header:'类别', dataIndex:'category', width:200, sortable:true, flex:1}, {header:'名称', dataIndex:'name', width:100, sortable:true, flex:1}, {header:'流程key', 
-dataIndex:'key', width:80, sortable:true, flex:1}, {header:'版本号', dataIndex:'version', width:60, sortable:true, flex:1}, {header:'部署Id', dataIndex:'deploymentId', width:60, sortable:true, hidden:true}, {header:'bpmn XML', dataIndex:'resourceName', width:120, sortable:true, hidden:true, renderer:function(value, metaData, record, rowIdx, colIdx, store, view) {
+Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {extend:Ext.panel.Panel, xtype:'processDefinitionGridPanel', layout:'fit', items:[{xtype:'gridpanel', cls:'process-definition-grid', title:'流程定义列表', bind:'{processDefinitionLists}', scrollable:false, columns:[{header:'流程定义实体Id', dataIndex:'id', width:120, sortable:true}, {header:'类别', dataIndex:'category', width:200, sortable:true}, {header:'名称', dataIndex:'name', width:100, sortable:true}, {header:'流程key', dataIndex:'key', width:80, 
+sortable:true}, {header:'版本号', dataIndex:'version', width:60, sortable:true}, {header:'部署Id', dataIndex:'deploymentId', width:60, sortable:true, hidden:true}, {header:'bpmn XML', dataIndex:'resourceName', width:120, sortable:true, hidden:true, renderer:function(value, metaData, record, rowIdx, colIdx, store, view) {
   return '\x3ca target\x3d"_blank" href\x3d"' + 'process-definition/resource?pdid\x3d' + record.get('id') + '\x26resourceName\x3d' + record.get('resourceName') + '"\x3e' + record.get('resourceName') + '\x3c/a\x3e';
 }}, {header:'流程图', dataIndex:'diagramResourceName', width:120, sortable:true, hidden:true, renderer:function(value, metaData, record, rowIdx, colIdx, store, view) {
   return '\x3ca target\x3d"_blank" href\x3d"' + 'process-definition/resource?pdid\x3d' + record.get('id') + '\x26resourceName\x3d' + record.get('diagramResourceName') + '"\x3e' + record.get('diagramResourceName') + '\x3c/a\x3e';
 }}, {header:'是否挂起', dataIndex:'suspended', width:80, sortable:true, hidden:true}, {header:'startFormKey', dataIndex:'startFormKey', width:180, sortable:true, hidden:true}, {header:'graphicalNotation', dataIndex:'graphicalNotation', width:180, sortable:true, hidden:true}, {header:'description', dataIndex:'description', width:60, sortable:true, hidden:true}, {header:'tenantId', dataIndex:'tenantId', width:180, sortable:true, hidden:true}, {xtype:'actioncolumn', cls:'content-column', width:260, text:'操作', 
-flex:1, items:[{xtype:'button', iconCls:'x-fa fa-trash-o', tooltip:'删除', handler:'onClickProcessDefinitionGridDeleteButton'}, {xtype:'button', iconCls:'x-fa  fa-file-excel-o', tooltip:'BPMN XML', handler:'onClickProcessDefinitionReadResourceButton'}, {xtype:'button', iconCls:'x-fa fa-file-picture-o', tooltip:'流程定义图', handler:'onClickProcessDefinitionReadDiagramResourceButton'}, {xtype:'button', iconCls:'x-fa fa-cog', tooltip:'激活', getClass:function(v, meta, rec) {
+items:[{xtype:'button', iconCls:'x-fa fa-trash-o', tooltip:'删除', handler:'onClickProcessDefinitionGridDeleteButton'}, {xtype:'button', iconCls:'x-fa  fa-file-excel-o', tooltip:'BPMN XML', handler:'onClickProcessDefinitionReadResourceButton'}, {xtype:'button', iconCls:'x-fa fa-file-picture-o', tooltip:'流程定义图', handler:'onClickProcessDefinitionReadDiagramResourceButton'}, {xtype:'button', iconCls:'x-fa fa-cog', tooltip:'激活', getClass:function(v, meta, rec) {
   if (rec.get('suspended') != true) {
     return 'x-hidden';
   }
@@ -84065,124 +85745,4 @@ Ext.define('Admin.view.process.definition.ProcessDefinitionViewController', {ext
   Ext.Msg.alert('Title', 'Click Convert Model Button');
 }});
 Ext.define('Admin.view.process.definition.ProcessDefinitionViewModel', {extend:Ext.app.ViewModel, alias:'viewmodel.processDefinitionViewModel', stores:{processDefinitionLists:{type:'processDefinitionStroe'}}});
-Ext.define('Admin.view.user.User', {extend:Ext.container.Container, xtype:'user', controller:'userViewController', viewModel:{type:'userViewModel'}, layout:'fit', items:[{xtype:'userPanel'}]});
-Ext.define('Admin.view.user.UserAddWindow', {extend:Ext.window.Window, alias:'widget.userAddWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'添加用户信息', items:[{xtype:'form', layout:'form', bodyPadding:20, scrollable:true, items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'UserName', name:'userName'}, {xtype:'textfield', fieldLabel:'Password', name:'password'}, {xtype:'datefield', fieldLabel:'Birthday', name:'birthday', 
-format:'Y/m/d H:i:s'}], buttons:[{xtype:'button', text:'Submit', handler:'submitAddForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}]}]});
-Ext.define('Admin.view.user.UserEditWindow', {extend:Ext.window.Window, alias:'widget.userEditWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'修改用户信息', items:[{xtype:'form', layout:'form', bodyPadding:20, ariaLabel:'Enter your name', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'UserName', name:'userName'}, {xtype:'textfield', fieldLabel:'Password', name:'password'}, {xtype:'datefield', fieldLabel:'Birthday', 
-name:'birthday', format:'Y/m/d H:i:s'}], buttons:['-\x3e', {xtype:'button', text:'Submit', handler:'submitEditForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}, '-\x3e']}]});
-Ext.define('Admin.view.user.UserPanel', {extend:Ext.panel.Panel, xtype:'userPanel', layout:'fit', items:[{xtype:'gridpanel', cls:'user-grid', title:'UserGrid Results', bind:'{userLists}', scrollable:false, selModel:{type:'checkboxmodel', checkOnly:true}, columns:[{xtype:'gridcolumn', width:40, dataIndex:'id', text:'#', hidden:true}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'userName', text:'UserName', flex:1}, {xtype:'gridcolumn', cls:'content-column', dataIndex:'password', text:'Password', 
-flex:1}, {xtype:'datecolumn', cls:'content-column', width:200, dataIndex:'birthday', text:'Birthday', formatter:'date("Y/m/d H:i:s")', flex:1}, {xtype:'actioncolumn', cls:'content-column', width:120, text:'Actions', tooltip:'edit ', items:[{xtype:'button', iconCls:'x-fa fa-pencil', handler:'openEditWindow'}, {xtype:'button', iconCls:'x-fa fa-close', handler:'deleteOneRow'}, {xtype:'button', iconCls:'x-fa fa-ban', handler:'onDisableButton'}]}], listeners:{selectionchange:function(selModel, selections) {
-  this.down('#userGridPanelRemove').setDisabled(selections.length === 0);
-}}, tbar:[{xtype:'combobox', hideLabel:true, reference:'searchFieldName', store:Ext.create('Ext.data.Store', {fields:['name', 'value'], data:[{name:'用户名', value:'userName'}, {name:'生日', value:'birthday'}]}), displayField:'name', valueField:'value', value:'userName', editable:false, queryMode:'local', triggerAction:'all', emptyText:'Select a state...', width:135, listeners:{select:'searchComboboxSelectChange'}}, '-', {xtype:'textfield', reference:'searchFieldValue', name:'orderPanelSearchField'}, 
-'-', {xtype:'datefield', hideLabel:true, hidden:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue', fieldLabel:'From', name:'from_date'}, '-', {xtype:'datefield', hideLabel:true, hidden:true, format:'Y/m/d H:i:s', reference:'searchDataFieldValue2', fieldLabel:'To', name:'to_date'}, '-', {text:'Search', iconCls:'fa fa-search', handler:'quickSearch'}, '-', {text:'Search More', iconCls:'fa fa-search-plus', handler:'openSearchWindow'}, '-\x3e', {text:'Add', tooltip:'Add a new row', iconCls:'fa fa-plus', 
-handler:'openAddWindow'}, '-', {text:'Removes', itemId:'userGridPanelRemove', tooltip:'Remove the selected item', iconCls:'fa fa-trash', disabled:true, handler:'deleteMoreRows'}], dockedItems:[{xtype:'pagingtoolbar', dock:'bottom', displayInfo:true, bind:'{userLists}'}]}]});
-Ext.define('Admin.view.user.UserSearchWindow', {extend:Ext.window.Window, alias:'widget.userSearchWindow', autoShow:true, modal:true, layout:'fit', width:500, height:300, title:'查询用户信息', items:[{xtype:'form', layout:'form', bodyPadding:20, scrollable:true, defaults:{labelWidth:100}, defaultType:'textfield', items:[{xtype:'textfield', fieldLabel:'id', name:'id', hidden:true, readOnly:true}, {xtype:'textfield', fieldLabel:'UserName', name:'userName'}, {xtype:'datefield', format:'Y/m/d H:i:s', fieldLabel:'From', 
-name:'createTimeStart'}, {xtype:'datefield', format:'Y/m/d H:i:s', fieldLabel:'To', name:'createTimeEnd'}], buttons:[{xtype:'button', text:'Submit', handler:'submitSearchForm'}, {xtype:'button', text:'Close', handler:function(btn) {
-  btn.up('window').close();
-}}]}]});
-Ext.define('Admin.view.user.UserViewController', {extend:Ext.app.ViewController, alias:'controller.userViewController', openAddWindow:function(grid, rowIndex, colIndex) {
-  grid.up('container').add(Ext.widget('userAddWindow')).show();
-}, openEditWindow:function(grid, rowIndex, colIndex) {
-  var record = grid.getStore().getAt(rowIndex);
-  if (record) {
-    var win = grid.up('container').add(Ext.widget('userEditWindow'));
-    win.show();
-    win.down('form').getForm().loadRecord(record);
-  }
-}, openSearchWindow:function(toolbar, rowIndex, colIndex) {
-  toolbar.up('grid').up('container').add(Ext.widget('userSearchWindow')).show();
-}, submitAddForm:function(btn) {
-  var win = btn.up('window');
-  var form = win.down('form');
-  var record = Ext.create('Admin.model.user.UserModel');
-  var values = form.getValues();
-  console.log(values);
-  record.set(values);
-  record.save();
-  Ext.data.StoreManager.lookup('userGridStroe').load();
-  win.close();
-}, submitEditForm:function(btn) {
-  var win = btn.up('window');
-  var store = Ext.data.StoreManager.lookup('userGridStroe');
-  var values = win.down('form').getValues();
-  var record = store.getById(values.id);
-  record.set(values);
-  win.close();
-}, searchComboboxSelectChange:function(combo, record, index) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  if (searchField === 'birthday') {
-    this.lookupReference('searchFieldValue').hide();
-    this.lookupReference('searchDataFieldValue').show();
-    this.lookupReference('searchDataFieldValue2').show();
-  } else {
-    this.lookupReference('searchFieldValue').show();
-    this.lookupReference('searchDataFieldValue').hide();
-    this.lookupReference('searchDataFieldValue2').hide();
-  }
-}, quickSearch:function(btn) {
-  var searchField = this.lookupReference('searchFieldName').getValue();
-  var searchValue = this.lookupReference('searchFieldValue').getValue();
-  var searchDataFieldValue = this.lookupReference('searchDataFieldValue').getValue();
-  var searchDataFieldValue2 = this.lookupReference('searchDataFieldValue2').getValue();
-  var store = btn.up('gridpanel').getStore();
-  Ext.apply(store.proxy.extraParams, {userName:'', createTimeStart:'', createTimeEnd:''});
-  if (searchField === 'userName') {
-    Ext.apply(store.proxy.extraParams, {userName:searchValue});
-  }
-  if (searchField === 'birthday') {
-    Ext.apply(store.proxy.extraParams, {createTimeStart:Ext.util.Format.date(searchDataFieldValue, 'Y/m/d H:i:s'), createTimeEnd:Ext.util.Format.date(searchDataFieldValue2, 'Y/m/d H:i:s')});
-  }
-  store.load({params:{start:0, limit:20, page:1}});
-}, submitSearchForm:function(btn) {
-  var store = Ext.data.StoreManager.lookup('userGridStroe');
-  var win = btn.up('window');
-  var form = win.down('form');
-  var values = form.getValues();
-  Ext.apply(store.proxy.extraParams, {userName:'', createTimeStart:'', createTimeEnd:''});
-  Ext.apply(store.proxy.extraParams, {userName:values.userName, createTimeStart:Ext.util.Format.date(values.createTimeStart, 'Y/m/d H:i:s'), createTimeEnd:Ext.util.Format.date(values.createTimeEnd, 'Y/m/d H:i:s')});
-  store.load({params:{start:0, limit:20, page:1}});
-  win.close();
-}, deleteOneRow:function(grid, rowIndex, colIndex) {
-  Ext.MessageBox.confirm('提示', '确定要进行删除操作吗？数据将无法还原！', function(btn, text) {
-    if (btn == 'yes') {
-      var store = grid.getStore();
-      var record = store.getAt(rowIndex);
-      store.remove(record);
-      Ext.data.StoreManager.lookup('userGridStroe').load();
-    }
-  }, this);
-}, deleteMoreRows:function(btn) {
-  var grid = btn.up('gridpanel');
-  var selModel = grid.getSelectionModel();
-  if (selModel.hasSelection()) {
-    Ext.Msg.confirm('警告', '确定要删除吗？', function(button) {
-      if (button == 'yes') {
-        var rows = selModel.getSelection();
-        var selectIds = [];
-        Ext.each(rows, function(row) {
-          selectIds.push(row.data.id);
-        });
-        Ext.Ajax.request({url:'/user/deletes', method:'post', params:{ids:selectIds}, success:function(response, options) {
-          var json = Ext.util.JSON.decode(response.responseText);
-          if (json.success) {
-            Ext.Msg.alert('操作成功', json.msg, function() {
-              grid.getStore().reload();
-            });
-          } else {
-            Ext.Msg.alert('操作失败', json.msg);
-          }
-        }});
-      }
-    });
-  } else {
-    Ext.Msg.alert('错误', '没有任何行被选中，无法进行删除操作！');
-  }
-}, onDisableButton:function(grid, rowIndex, colIndex) {
-  Ext.Msg.alert('Title', 'Click Disable Button');
-}});
-Ext.define('Admin.view.user.UserViewModel', {extend:Ext.app.ViewModel, alias:'viewmodel.userViewModel', stores:{userLists:{type:'userGridStroe'}}});
 Ext.application({extend:Admin.Application, name:'Admin', mainView:'Admin.view.main.Main'});

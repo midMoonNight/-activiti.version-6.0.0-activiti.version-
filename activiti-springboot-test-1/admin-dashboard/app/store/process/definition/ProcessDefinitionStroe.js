@@ -1,17 +1,17 @@
-Ext.define('Admin.store.process.definition.ProcessDefinitionStroe',{
+﻿Ext.define('Admin.store.process.definition.ProcessDefinitionStroe', {
     extend: 'Ext.data.Store',
+    storeId:'processDefinitionStroe',
     alias: 'store.processDefinitionStroe',
 	model:'Admin.model.process.definition.ProcessDefinitionModel',
-    storeId:'processDefinitionStroe',
     pageSize: 15,
     proxy: {
         type: 'ajax',
         url: '/process-definition',
-        reader : new Ext.data.JsonReader({  
+        reader : {  
             type : 'json',  
             rootProperty  : 'content',
             totalProperty : 'totalElements'
-        })
+        }
         ,simpleSortMode: true
     },
     remoteSort: true,

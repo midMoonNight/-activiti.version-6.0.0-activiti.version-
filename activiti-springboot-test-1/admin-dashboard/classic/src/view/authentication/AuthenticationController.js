@@ -1,4 +1,4 @@
-Ext.define('Admin.view.authentication.AuthenticationController', {
+﻿Ext.define('Admin.view.authentication.AuthenticationController', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.authentication',
 
@@ -8,8 +8,8 @@ Ext.define('Admin.view.authentication.AuthenticationController', {
         this.redirectTo('dashboard', true);
     },
 
-    onLoginButton: function(btn) {
-        var me = this;
+	onLoginButton: function(btn){
+    	var me = this;
         Ext.Ajax.request({
             url: 'login',
             method: 'post',
@@ -18,17 +18,18 @@ Ext.define('Admin.view.authentication.AuthenticationController', {
                 password: btn.up("form").getForm().findField("password").getValue()
             },
             success: function(response, options) {
-                var json = Ext.util.JSON.decode(response.responseText);
-                if(json.success){
-                    me.redirectTo('dashboard', true);
-                    Ext.getCmp('loginUserName').setText(json.map.userName);
-                }else{
-                    Ext.Msg.alert('登录失败', json.msg);
-                }
+            	var json = Ext.util.JSON.decode(response.responseText);
+	            if(json.success){
+	            	me.redirectTo('dashboard', true);
+	            	Ext.getCmp('loginUserName').setText(json.map.userName);
+	            	//Ext.getCmp('loginUserImage').getEl().dom.src = json.map.loginUserImage;
+	            
+		        }else{
+		        	Ext.Msg.alert('登录失败', json.msg);
+		        }
             }
         });
-    },
-
+	},
     onLoginAsButton: function() {
         this.redirectTo('login', true);
     },

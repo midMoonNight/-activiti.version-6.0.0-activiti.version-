@@ -26,8 +26,8 @@ public class LoginController {
     @Autowired
     private IdentityService identityService;
     /** 登录系统**/
-    @RequestMapping(value = "/activiti/login")
-    public @ResponseBody ExtAjaxResponse logon(@RequestParam("userName") String userName, @RequestParam("password") String password, HttpSession session) {
+    @RequestMapping(value = "/login")
+    public @ResponseBody ExtAjaxResponse login(@RequestParam("userName") String userName, @RequestParam("password") String password, HttpSession session) {
     	logger.debug("logon request: {userName={}, password={}}", userName, password);
         boolean checkPassword = identityService.checkPassword(userName, password);
         if (checkPassword) {

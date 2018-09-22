@@ -1,4 +1,4 @@
-Ext.define('Admin.view.main.MainController', {
+﻿Ext.define('Admin.view.main.MainController', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.main',
 
@@ -27,7 +27,7 @@ Ext.define('Admin.view.main.MainController', {
             store = navigationList.getStore(),
             node = store.findNode('routeId', hashTag) ||
                    store.findNode('viewType', hashTag),
-            view = (node && node.get('viewType')),
+            view = (node && node.get('viewType')) || 'page404',
             lastView = me.lastView,
             existingItem = mainCard.child('component[routeId=' + hashTag + ']'),
             newView;
@@ -138,41 +138,39 @@ Ext.define('Admin.view.main.MainController', {
             }
         }
     },
-
+	
     onMainViewRender:function() {
         if (!window.location.hash) {
             this.redirectTo("login");
         }
     },
-
-    logoutButton: function(){
-        var me = this;
-        Ext.Ajax.request({
-            url: 'logout',
-            method: 'post',
-            success: function(response, options) {
-                var json = Ext.util.JSON.decode(response.responseText);
-                if(json.success){
-                    me.redirectTo('login', true);
-                    window.location.reload();
-                }else{
-                    Ext.Msg.alert('登出失败', json.msg);
-                }
-            }
-        });
-    },
-
     onRouteChange:function(id){
         this.setCurrentView(id);
         //登录校验:没有登录无法访问其他模块.
         /*
         var me = this;
-        if(loginUser!="null" || id=="login"){
-            me.setCurrentView(id);
-        }else{
-            Ext.Msg.alert('警告', '非法登录系统!',function(){
-                me.setCurrentView('login');
-            });
-        }*/
+	    if(loginUser!="null" || id=="login"){
+			me.setCurrentView(id);
+		}else{
+			Ext.Msg.alert('警告', '非法登录系统!',function(){
+				me.setCurrentView('login');
+			});
+		}*/
+    }
+	,logoutButton: function(){
+		var me = this;
+        Ext.Ajax.request({
+            url: 'logout',
+            method: 'post',
+            success: function(response, options) {
+            	var json = Ext.util.JSON.decode(response.responseText);
+	            if(json.success){
+	            	me.redirectTo('login', true);
+	            	window.location.reload();
+		        }else{
+		        	Ext.Msg.alert('登出失败', json.msg);
+		        }
+            }
+        });
     }
 });

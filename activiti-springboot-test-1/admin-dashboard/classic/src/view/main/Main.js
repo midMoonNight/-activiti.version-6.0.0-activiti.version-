@@ -48,8 +48,7 @@
                     text: '用户名:Admin',
                     id:'loginUserName',
                     cls: 'top-user-name'
-                },
-                {
+                },{
                     xtype: 'image',
                     cls: 'header-right-profile-image',
                     id:'loginUserImage',

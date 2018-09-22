@@ -1,28 +1,47 @@
 Ext.define('Admin.store.order.OrderGridStroe', {
     extend: 'Ext.data.Store',
     alias: 'store.orderGridStroe',
-    model:'Admin.model.order.OrderModel',
-	storeId:'orderGridStroe',
+	fields: [
+	    {type: 'int',name: 'identifier'},
+	    {type: 'string',name: 'fullname'},
+	    {type: 'string',name: 'email'},
+	    {name: 'subscription'},
+	    {type: 'date', name: 'joinDate'},
+	    {type: 'boolean',name: 'isActive' },
+	    {name: 'profile_pic'}
+	],
+	data: {
+		'lists':[{
+	        "identifier": 1,
+	        "fullname": "Archie Young",
+	        "profile_pic": "1.png",
+	        "email": "dwatkins@mydeo.name",
+	        "subscription": "minima",
+	        "joinDate": "10/16/2012",
+	        "isActive": false
+	    },{
+	        "identifier": 2,
+	        "fullname": "May Williams",
+	        "profile_pic": "2.png",
+	        "email": "jreid@babbleblab.com",
+	        "subscription": "ab",
+	        "joinDate": "6/13/2004",
+	        "isActive": true
+    	}]
+    },
     proxy: {
-        type: 'rest',
-        url: '/order',
-        reader:{
-            type:'json',
-            rootProperty:'content',//对应后台返回的结果集名称
-            totalProperty: 'totalElements'//分页需要知道总记录数
-        },
-        writer: {
-            type: 'json'
-        },
-        simpleSortMode: true    //简单排序模式
+        type: 'memory',
+        //url: '~api/search/users'	//mvc url  xxx.json
+	    reader:{
+	    	type:'json',
+	    	rootProperty:'lists'
+	    }
     },
 
     autoLoad: 'true',
-    autoSync: true,//连后台后修改sotre数据自动触发rest请求
-    pageSize:20,
-    remoteSort: true,//全局排序
+
     sorters: {
-        direction: 'DESC',
-        property: 'id'
+        direction: 'ASC',
+        property: 'fullname'
     }
 });

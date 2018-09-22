@@ -1,4 +1,4 @@
-Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {
+﻿Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {
     extend: 'Ext.panel.Panel',
     xtype: 'processDefinitionGridPanel',
     requires: [
@@ -9,19 +9,18 @@ Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {
     layout: 'fit',
     items: [{
             xtype: 'gridpanel',
-            cls: 'process-definition-grid',//使用步骤3编写好的样式组
+            cls: 'process-definition-grid',
             title: '流程定义列表',
             bind: '{processDefinitionLists}',
             scrollable: false,
             columns : [
-				 {header : '流程定义实体Id',dataIndex : 'id',width : 120,sortable : true,flex:1}
-				,{header : '类别',dataIndex : 'category',width : 200,sortable : true,flex:1}
-				,{header : '名称',dataIndex : 'name',width : 100,sortable : true,flex:1}
-				,{header : '流程key',dataIndex : 'key',width : 80,sortable : true,flex:1}
-				,{header : '版本号',dataIndex : 'version',width : 60,sortable : true,flex:1}
+				 {header : '流程定义实体Id',dataIndex : 'id',width : 120,sortable : true}
+				,{header : '类别',dataIndex : 'category',width : 200,sortable : true}
+				,{header : '名称',dataIndex : 'name',width : 100,sortable : true}
+				,{header : '流程key',dataIndex : 'key',width : 80,sortable : true}
+				,{header : '版本号',dataIndex : 'version',width : 60,sortable : true}
 				,{header : '部署Id',dataIndex : 'deploymentId',width : 60,sortable : true,hidden : true}
-				//,{header : '部署时间',dataIndex : 'deploymentTime',width : 150,sortable : true,
-				//	renderer : Ext.util.Format.dateRenderer('Y/m/d H:i:s')}
+				//,{header : '部署时间',dataIndex : 'deploymentTime',width : 150,sortable : true,renderer : Ext.util.Format.dateRenderer('Y/m/d H:i:s')}
 				,{header : 'bpmn XML',dataIndex : 'resourceName',width : 120,sortable : true,hidden : true,
 					renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
 						return '<a target="_blank" href="'
@@ -45,7 +44,7 @@ Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {
 				,{header : 'graphicalNotation',dataIndex : 'graphicalNotation',width : 180,sortable : true,hidden : true} 
 				,{header : 'description',dataIndex : 'description',width : 60,sortable : true,hidden : true	}
 				,{header : 'tenantId',dataIndex : 'tenantId',width : 180,sortable : true,hidden : true	}
-				,{xtype : 'actioncolumn',cls : 'content-column',width : 260,text : '操作',flex:1,
+				,{xtype : 'actioncolumn',cls : 'content-column',width : 260,text : '操作',
 					items : [{
 						xtype : 'button',iconCls : 'x-fa fa-trash-o',tooltip: '删除',
 						handler : 'onClickProcessDefinitionGridDeleteButton'
@@ -86,7 +85,7 @@ Ext.define('Admin.view.process.definition.ProcessDefinitionGridPanel', {
 		        tooltip: '上传流程图',
 		        iconCls:'fa fa-cloud-upload',
 		        handler: 'onClickProcessDefinitionGridUploadButton'	
-		    }],
+		    }],	
             dockedItems: [{
                 xtype: 'pagingtoolbar',
                 dock: 'bottom',

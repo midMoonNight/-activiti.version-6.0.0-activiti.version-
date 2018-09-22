@@ -1,4 +1,4 @@
-Ext.define('Admin.view.process.definition.ProcessDefinitionCenterPanel', {
+﻿Ext.define('Admin.view.process.definition.ProcessDefinitionCenterPanel', {
     extend: 'Ext.container.Container',
     xtype: 'processDefinitionCenterPanel',
     controller: 'processDefinitionViewController',

@@ -1,4 +1,4 @@
-Ext.define('Admin.view.process.definition.ProcessDefinitionViewModel', {
+﻿Ext.define('Admin.view.process.definition.ProcessDefinitionViewModel', {
     extend: 'Ext.app.ViewModel',
     alias: 'viewmodel.processDefinitionViewModel',
     requires: [

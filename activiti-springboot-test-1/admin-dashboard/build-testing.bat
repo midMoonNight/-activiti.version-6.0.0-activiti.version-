@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 set curdir=%~dp0
 cd /d %curdir%
 echo "===========================	remove dir build	==========================="
